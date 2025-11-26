@@ -6,13 +6,16 @@ import { Button, Input, Checkbox, Modal } from '@/components/ui';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { user, signIn, resetPassword, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const { remLogin, setRemLogin } = useAppState();
 
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
 
   // Password reset modal state
   const [showResetModal, setShowResetModal] = useState(false);
@@ -32,10 +35,27 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
-      navigate('/dashboard');
+      if (isSignUp) {
+        // Sign up mode
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          setIsSubmitting(false);
+          return;
+        }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters');
+          setIsSubmitting(false);
+          return;
+        }
+        await signUp(email, password);
+        setSignUpSuccess(true);
+      } else {
+        // Sign in mode
+        await signIn(email, password);
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in');
+      setError(err instanceof Error ? err.message : isSignUp ? 'Failed to sign up' : 'Failed to sign in');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,81 +97,137 @@ export function LoginPage() {
       {/* Welcome text */}
       <div className="text-center mb-5 animate-slide-up">
         <h1 className="text-xl font-semibold text-gray-900 mb-1">
-          Welcome
+          {isSignUp ? 'Create Account' : 'Welcome'}
         </h1>
         <p className="text-sm text-gray-500">
-          Please sign in to continue.
+          {isSignUp ? 'Sign up to get started.' : 'Please sign in to continue.'}
         </p>
       </div>
 
-      {/* Login form */}
-      <form 
-        onSubmit={handleSubmit} 
-        className="w-full max-w-[400px] space-y-3.5 animate-slide-up"
-        style={{ animationDelay: '100ms' }}
-      >
-        {error && (
-          <div className="bg-red-50 text-error text-sm p-3 rounded-lg">
-            {error}
+      {/* Success message for signup */}
+      {signUpSuccess ? (
+        <div className="w-full max-w-[400px] animate-slide-up">
+          <div className="bg-green-50 border border-green-200 text-green-800 text-sm p-4 rounded-lg mb-4">
+            <p className="font-semibold mb-1">Account created successfully!</p>
+            <p>You can now sign in with your credentials.</p>
           </div>
-        )}
-
-        <Input
-          type="email"
-          label="Email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          fullWidth
-          leftIcon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          }
-        />
-
-        <Input
-          type="password"
-          label="Password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          fullWidth
-          showPasswordToggle
-          leftIcon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          }
-        />
-
-        <div className="flex items-center justify-between">
-          <Checkbox
-            id="rememberLogin"
-            label="Remember me"
-            checked={remLogin}
-            onChange={(e) => setRemLogin(e.target.checked)}
-          />
-          <button
-            type="button"
-            onClick={() => setShowResetModal(true)}
-            className="text-sm text-primary hover:underline"
+          <Button
+            onClick={() => {
+              setIsSignUp(false);
+              setSignUpSuccess(false);
+              setEmail('');
+              setPassword('');
+              setConfirmPassword('');
+            }}
+            fullWidth
           >
-            Forgot Password?
-          </button>
+            Go to Sign In
+          </Button>
         </div>
-
-        <Button
-          type="submit"
-          fullWidth
-          loading={isSubmitting || loading}
-          size="lg"
+      ) : (
+        <form 
+          onSubmit={handleSubmit} 
+          className="w-full max-w-[400px] space-y-3.5 animate-slide-up"
+          style={{ animationDelay: '100ms' }}
         >
-          Sign In
-        </Button>
-      </form>
+          {error && (
+            <div className="bg-red-50 text-error text-sm p-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <Input
+            type="email"
+            label="Email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            fullWidth
+            leftIcon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            }
+          />
+
+          <Input
+            type="password"
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            fullWidth
+            showPasswordToggle
+            leftIcon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            }
+          />
+
+          {isSignUp && (
+            <Input
+              type="password"
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              fullWidth
+              showPasswordToggle
+              leftIcon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              }
+            />
+          )}
+
+          {!isSignUp && (
+            <div className="flex items-center justify-between">
+              <Checkbox
+                id="rememberLogin"
+                label="Remember me"
+                checked={remLogin}
+                onChange={(e) => setRemLogin(e.target.checked)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowResetModal(true)}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            loading={isSubmitting || loading}
+            size="lg"
+          >
+            {isSignUp ? 'Sign Up' : 'Sign In'}
+          </Button>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+                setPassword('');
+                setConfirmPassword('');
+              }}
+              className="text-sm text-gray-600 hover:text-primary transition-colors"
+            >
+              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Password Reset Modal */}
       <Modal
