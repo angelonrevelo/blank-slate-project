@@ -3,13 +3,55 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Corporate Color Palette */
+  --primary-50: 220 95% 98%;
+  --primary-100: 220 90% 95%;
+  --primary-200: 220 85% 90%;
+  --primary-300: 220 80% 80%;
+  --primary-400: 220 75% 65%;
+  --primary-500: 220 70% 50%;
+  --primary-600: 220 75% 40%;
+  --primary-700: 220 80% 30%;
+  --primary-800: 220 85% 22%;
+  --primary-900: 220 90% 15%;
+
+  /* Semantic Colors */
+  --background: 0 0% 100%;
+  --foreground: 220 15% 20%;
+  --border: 220 15% 88%;
+  --ring: 220 70% 50%;
+
+  /* UI States */
+  --success: 142 76% 36%;
+  --warning: 38 92% 50%;
+  --error: 0 84% 60%;
+  --info: 199 89% 48%;
+
+  /* Surface Colors */
+  --card: 0 0% 100%;
+  --card-foreground: 220 15% 20%;
+  --secondary: 220 15% 97%;
+  --muted: 220 15% 95%;
+  --muted-foreground: 220 10% 45%;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {

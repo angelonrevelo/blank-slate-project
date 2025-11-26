@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
   currentPage?: string;
@@ -79,36 +81,53 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ currentPage }: SidebarProps) {
   const { shrinkBar } = useAppState();
+  const [collapsed, setCollapsed] = useState(false);
 
   if (shrinkBar) return null;
 
   return (
-    <aside className="hidden md:flex flex-col bg-primary h-screen w-[110px] flex-shrink-0">
+    <aside className={`hidden md:flex flex-col bg-primary h-screen flex-shrink-0 transition-all duration-300 relative ${collapsed ? 'w-16' : 'w-64'}`}>
+      {/* Collapse Toggle */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10"
+      >
+        {collapsed ? (
+          <ChevronRight className="h-4 w-4 text-gray-600" />
+        ) : (
+          <ChevronLeft className="h-4 w-4 text-gray-600" />
+        )}
+      </button>
+
       {/* Logo */}
-      <div className="flex justify-center py-4">
+      <div className="flex justify-center py-6 px-4">
         <img
           src="/images/Logo_White3.png"
           alt="VBE Eye Center Logo"
-          className="w-[90px] h-[90px] object-contain"
+          className={`object-contain transition-all duration-300 ${collapsed ? 'w-8 h-8' : 'w-16 h-16'}`}
         />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col">
+      <nav className="flex-1 flex flex-col gap-1 px-2">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            title={item.name}
             className={({ isActive }) => `
-              flex flex-col items-center justify-center py-3 transition-colors duration-200
+              flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group
               ${isActive || currentPage === item.name
-                ? 'bg-white text-primary'
-                : 'text-white hover:bg-primary-light'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-white hover:bg-white/10'
               }
+              ${collapsed ? 'justify-center' : ''}
             `}
           >
-            <span className="mb-1">{item.icon}</span>
-            <span className="text-xs font-medium">{item.name}</span>
+            <span className="flex-shrink-0">{item.icon}</span>
+            {!collapsed && (
+              <span className="text-sm font-medium whitespace-nowrap">{item.name}</span>
+            )}
           </NavLink>
         ))}
       </nav>
