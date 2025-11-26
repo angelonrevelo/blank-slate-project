@@ -66,20 +66,20 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       {/* Logo */}
-      <div className="mb-8 animate-scale-in">
+      <div className="mb-6 animate-scale-in">
         <img
           src="/images/LogoTitle2_VBE.png"
           alt="VBE Eye Center"
-          className="w-[300px] md:w-[350px] h-auto object-contain"
+          className="w-[180px] h-auto object-contain"
         />
       </div>
 
       {/* Welcome text */}
-      <div className="text-center mb-6 animate-slide-up">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">
-          Welcome!
+      <div className="text-center mb-5 animate-slide-up">
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">
+          Welcome
         </h1>
-        <p className="text-gray-500">
+        <p className="text-sm text-gray-500">
           Please sign in to continue.
         </p>
       </div>
@@ -87,7 +87,7 @@ export function LoginPage() {
       {/* Login form */}
       <form 
         onSubmit={handleSubmit} 
-        className="w-full max-w-sm space-y-4 animate-slide-up"
+        className="w-full max-w-[400px] space-y-3.5 animate-slide-up"
         style={{ animationDelay: '100ms' }}
       >
         {error && (
