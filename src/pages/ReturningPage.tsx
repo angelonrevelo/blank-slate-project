@@ -1,7 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Input } from '@/components/ui';
+import { Input, LoadingSpinner } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
+
+type FollowUp = {
+  id: string;
+  patient: string;
+  date: string;
+  notes: string;
+  status: string;
+};
 
 export function ReturningPage() {
   const navigate = useNavigate();
@@ -9,9 +18,63 @@ export function ReturningPage() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock follow-up data - will be replaced with Supabase data
-  const followUps: { id: string; patient: string; date: string; notes: string; status: string }[] = [];
+  useEffect(() => {
+    fetchFollowUps();
+  }, [viewingBranch, selectedDate]);
+
+  const fetchFollowUps = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('followups')
+        .select(`
+          id,
+          followup_date,
+          notes,
+          status,
+          patient:patients(firstname, lastname)
+        `)
+        .eq('branch', viewingBranch)
+        .order('followup_date', { ascending: true });
+
+      if (selectedDate) {
+        query = query.eq('followup_date', selectedDate);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedFollowUps: FollowUp[] = (data || []).map((f: any) => ({
+        id: f.id,
+        patient: `${f.patient.firstname} ${f.patient.lastname}`,
+        date: new Date(f.followup_date).toLocaleDateString(),
+        notes: f.notes || 'No notes',
+        status: f.status,
+      }));
+
+      // Apply search filter
+      if (searchQuery) {
+        const filtered = formattedFollowUps.filter(f =>
+          f.patient.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFollowUps(filtered);
+      } else {
+        setFollowUps(formattedFollowUps);
+      }
+    } catch (error) {
+      console.error('Error fetching follow-ups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFollowUps();
+  }, [searchQuery]);
 
   return (
     <div className="h-full flex flex-col">
@@ -57,7 +120,11 @@ export function ReturningPage() {
 
       {/* Follow-up List */}
       <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {followUps.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : followUps.length > 0 ? (
           <div className="grid gap-4">
             {followUps.map((followUp) => (
               <div
@@ -91,10 +158,10 @@ export function ReturningPage() {
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Returning Patients</h3>
             <p className="text-gray-500">
-              No follow-up appointments scheduled
-            </p>
-            <p className="text-sm text-gray-400 mt-2">
-              Connect to Supabase to view follow-ups
+              {selectedDate || searchQuery
+                ? 'No follow-up appointments match your search'
+                : 'No follow-up appointments scheduled'
+              }
             </p>
           </div>
         )}

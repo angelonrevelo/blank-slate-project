@@ -1,7 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Input } from '@/components/ui';
+import { Input, LoadingSpinner } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
+
+type Surgery = {
+  id: string;
+  patient: string;
+  procedure: string;
+  date: string;
+  time: string;
+  surgeon: string;
+  status: string;
+};
 
 export function SurgeryPage() {
   const navigate = useNavigate();
@@ -9,9 +20,68 @@ export function SurgeryPage() {
   
   const [selectedDate, setSelectedDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [surgeries, setSurgeries] = useState<Surgery[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock surgery data - will be replaced with Supabase data
-  const surgeries: { id: string; patient: string; procedure: string; date: string; time: string; surgeon: string; status: string }[] = [];
+  useEffect(() => {
+    fetchSurgeries();
+  }, [viewingBranch, selectedDate, filterStatus]);
+
+  const fetchSurgeries = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('surgeries')
+        .select(`
+          id,
+          procedure,
+          scheduled_date,
+          scheduled_time,
+          status,
+          patient:patients(firstname, lastname),
+          surgeon:profiles!surgeries_surgeon_id_fkey(firstname, lastname)
+        `)
+        .eq('branch', viewingBranch)
+        .order('scheduled_date', { ascending: true });
+
+      if (selectedDate) {
+        query = query.eq('scheduled_date', selectedDate);
+      }
+
+      if (filterStatus !== 'all') {
+        const statusMap: Record<string, 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled'> = {
+          'scheduled': 'Scheduled',
+          'in-progress': 'In Progress',
+          'completed': 'Completed',
+          'cancelled': 'Cancelled',
+        };
+        const mappedStatus = statusMap[filterStatus];
+        if (mappedStatus) {
+          query = query.eq('status', mappedStatus);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedSurgeries: Surgery[] = (data || []).map((s: any) => ({
+        id: s.id,
+        patient: `${s.patient.firstname} ${s.patient.lastname}`,
+        procedure: s.procedure,
+        date: new Date(s.scheduled_date).toLocaleDateString(),
+        time: s.scheduled_time,
+        surgeon: s.surgeon ? `Dr. ${s.surgeon.firstname} ${s.surgeon.lastname}` : 'Not assigned',
+        status: s.status,
+      }));
+
+      setSurgeries(formattedSurgeries);
+    } catch (error) {
+      console.error('Error fetching surgeries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statusFilters = [
     { value: 'all', label: 'All' },
@@ -66,7 +136,11 @@ export function SurgeryPage() {
 
       {/* Surgery List */}
       <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {surgeries.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : surgeries.length > 0 ? (
           <div className="grid gap-4">
             {surgeries.map((surgery) => (
               <div
@@ -114,13 +188,10 @@ export function SurgeryPage() {
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Surgeries Scheduled</h3>
             <p className="text-gray-500">
-              {selectedDate 
-                ? `No surgeries scheduled for ${selectedDate}`
-                : 'No surgeries found for the selected filters'
+              {selectedDate || filterStatus !== 'all'
+                ? 'No surgeries match your search filters'
+                : 'No surgeries scheduled yet'
               }
-            </p>
-            <p className="text-sm text-gray-400 mt-2">
-              Connect to Supabase to view surgeries
             </p>
           </div>
         )}
