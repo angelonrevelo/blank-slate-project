@@ -3,3 +3,7 @@ export { Input } from './Input';
 export { Checkbox } from './Checkbox';
 export { Modal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
+export { Badge } from './Badge';
+export { Avatar, AvatarImage, AvatarFallback } from './Avatar';
+export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from './Table';
+export * from './DropdownMenu';
