@@ -1,28 +1,156 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, Input, Modal, LoadingSpinner } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+type Schedule = {
+  id: string;
+  patient: string;
+  procedure: string;
+  date: string;
+  time: string;
+  status: string;
+};
 
 export function SchedulingPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { viewingBranch } = useAppState();
+  const { toast } = useToast();
   
   const routeState = location.state as { visitID?: string } | null;
   
   const [selectedDate, setSelectedDate] = useState('');
   const [showNewScheduleModal, setShowNewScheduleModal] = useState(false);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [patients, setPatients] = useState<Array<{ id: string; name: string }>>([]);
   
   // New schedule form state
   const [scheduleForm, setScheduleForm] = useState({
-    patientName: '',
+    patientId: '',
     procedureType: '',
     scheduledDate: '',
+    scheduledTime: '',
     notes: '',
   });
 
-  // Mock schedule data - will be replaced with Supabase data
-  const schedules: { id: string; patient: string; procedure: string; date: string; time: string; status: string }[] = [];
+  useEffect(() => {
+    fetchSchedules();
+    fetchPatients();
+  }, [viewingBranch, selectedDate]);
+
+  const fetchPatients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('id, firstname, lastname')
+        .eq('branch', viewingBranch)
+        .eq('status', 'Active');
+
+      if (error) throw error;
+
+      setPatients((data || []).map(p => ({
+        id: p.id,
+        name: `${p.firstname} ${p.lastname}`,
+      })));
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+    }
+  };
+
+  const fetchSchedules = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('schedules')
+        .select(`
+          id,
+          procedure_type,
+          scheduled_date,
+          scheduled_time,
+          status,
+          patient:patients(firstname, lastname)
+        `)
+        .eq('branch', viewingBranch)
+        .order('scheduled_date', { ascending: true });
+
+      if (selectedDate) {
+        query = query.eq('scheduled_date', selectedDate);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedSchedules: Schedule[] = (data || []).map((s: any) => ({
+        id: s.id,
+        patient: `${s.patient.firstname} ${s.patient.lastname}`,
+        procedure: s.procedure_type,
+        date: new Date(s.scheduled_date).toLocaleDateString(),
+        time: s.scheduled_time,
+        status: s.status,
+      }));
+
+      setSchedules(formattedSchedules);
+    } catch (error) {
+      console.error('Error fetching schedules:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateSchedule = async () => {
+    if (!scheduleForm.patientId || !scheduleForm.procedureType || !scheduleForm.scheduledDate || !scheduleForm.scheduledTime) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('schedules').insert({
+        patient_id: scheduleForm.patientId,
+        procedure_type: scheduleForm.procedureType,
+        scheduled_date: scheduleForm.scheduledDate,
+        scheduled_time: scheduleForm.scheduledTime,
+        notes: scheduleForm.notes || null,
+        branch: viewingBranch,
+        created_by: user.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Schedule created successfully',
+      });
+
+      setShowNewScheduleModal(false);
+      setScheduleForm({
+        patientId: '',
+        procedureType: '',
+        scheduledDate: '',
+        scheduledTime: '',
+        notes: '',
+      });
+      fetchSchedules();
+    } catch (error) {
+      console.error('Error creating schedule:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create schedule',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const procedureTypes = [
     'Consultation',
@@ -85,7 +213,11 @@ export function SchedulingPage() {
 
       {/* Schedule Grid */}
       <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {schedules.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : schedules.length > 0 ? (
           <div className="grid gap-4">
             {schedules.map((schedule) => (
               <div
@@ -130,10 +262,10 @@ export function SchedulingPage() {
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Schedules</h3>
             <p className="text-gray-500">
-              No appointments scheduled for this date
-            </p>
-            <p className="text-sm text-gray-400 mt-2">
-              Connect to Supabase to view schedules
+              {selectedDate 
+                ? 'No appointments scheduled for this date'
+                : 'Get started by creating your first schedule'
+              }
             </p>
             <Button className="mt-4" onClick={() => setShowNewScheduleModal(true)}>
               Schedule Appointment
@@ -150,17 +282,25 @@ export function SchedulingPage() {
         size="md"
       >
         <div className="space-y-4">
-          <Input
-            label="Patient Name"
-            value={scheduleForm.patientName}
-            onChange={(e) => setScheduleForm({ ...scheduleForm, patientName: e.target.value })}
-            placeholder="Search or enter patient name"
-            fullWidth
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Patient *
+            </label>
+            <select
+              value={scheduleForm.patientId}
+              onChange={(e) => setScheduleForm({ ...scheduleForm, patientId: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Select patient</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>{patient.name}</option>
+              ))}
+            </select>
+          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Procedure Type
+              Procedure Type *
             </label>
             <select
               value={scheduleForm.procedureType}
@@ -175,10 +315,18 @@ export function SchedulingPage() {
           </div>
           
           <Input
-            type="datetime-local"
-            label="Scheduled Date & Time"
+            type="date"
+            label="Scheduled Date *"
             value={scheduleForm.scheduledDate}
             onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledDate: e.target.value })}
+            fullWidth
+          />
+
+          <Input
+            type="time"
+            label="Scheduled Time *"
+            value={scheduleForm.scheduledTime}
+            onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledTime: e.target.value })}
             fullWidth
           />
           
@@ -203,7 +351,7 @@ export function SchedulingPage() {
             >
               Cancel
             </Button>
-            <Button fullWidth>
+            <Button onClick={handleCreateSchedule} fullWidth>
               Create Schedule
             </Button>
           </div>

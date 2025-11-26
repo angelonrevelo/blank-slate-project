@@ -1,18 +1,157 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, Input, Modal, LoadingSpinner } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+type Patient = {
+  id: string;
+  patient_id: string;
+  name: string;
+  date: string;
+  status: string;
+};
 
 export function PatientsPage() {
   const navigate = useNavigate();
   const { patientSort, setPatientSort, viewingBranch } = useAppState();
+  const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newPatient, setNewPatient] = useState({
+    lastname: '',
+    firstname: '',
+    middlename: '',
+    birthdate: '',
+    gender: '' as 'Male' | 'Female' | 'Other' | '',
+    contact_number: '',
+    address: '',
+  });
 
-  // Mock patient data - will be replaced with Supabase data
-  const patients: { id: string; name: string; date: string; status: string }[] = [];
+  useEffect(() => {
+    fetchPatients();
+  }, [viewingBranch, patientSort]);
+
+  const fetchPatients = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('patients')
+        .select('*')
+        .eq('branch', viewingBranch);
+
+      // Apply sorting
+      if (patientSort === 'DATE_DESC') {
+        query = query.order('created_at', { ascending: false });
+      } else if (patientSort === 'DATE_ASC') {
+        query = query.order('created_at', { ascending: true });
+      } else if (patientSort === 'NAME_ASC') {
+        query = query.order('lastname', { ascending: true });
+      } else if (patientSort === 'NAME_DESC') {
+        query = query.order('lastname', { ascending: false });
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedPatients: Patient[] = (data || []).map((p) => ({
+        id: p.id,
+        patient_id: p.patient_id ?? '',
+        name: `${p.firstname} ${p.lastname}`,
+        date: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A',
+        status: p.status ?? 'Active',
+      }));
+
+      // Apply search filter
+      if (searchQuery) {
+        const filtered = formattedPatients.filter(p => {
+          const patientId = p.patient_id ?? '';
+          return p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                 patientId.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+        setPatients(filtered);
+      } else {
+        setPatients(formattedPatients);
+      }
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load patients',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePatient = async () => {
+    if (!newPatient.lastname || !newPatient.firstname || !newPatient.birthdate || !newPatient.gender) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Generate patient ID
+      const patientId = `P${Date.now()}`;
+
+      const { error } = await supabase.from('patients').insert({
+        patient_id: patientId,
+        lastname: newPatient.lastname,
+        firstname: newPatient.firstname,
+        middlename: newPatient.middlename || null,
+        birthdate: newPatient.birthdate,
+        gender: newPatient.gender,
+        contact_number: newPatient.contact_number || null,
+        address: newPatient.address || null,
+        branch: viewingBranch,
+        created_by: user.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Patient created successfully',
+      });
+
+      setShowNewPatientModal(false);
+      setNewPatient({
+        lastname: '',
+        firstname: '',
+        middlename: '',
+        birthdate: '',
+        gender: '',
+        contact_number: '',
+        address: '',
+      });
+      fetchPatients();
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create patient',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchPatients();
+  }, [searchQuery]);
 
   const sortOptions = [
     { value: 'DATE_DESC', label: 'Date (Newest First)' },
@@ -84,7 +223,11 @@ export function PatientsPage() {
 
       {/* Patient List */}
       <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {patients.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : patients.length > 0 ? (
           <div className="grid gap-4">
             {patients.map((patient) => (
               <div
@@ -95,7 +238,7 @@ export function PatientsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">{patient.name}</h3>
-                    <p className="text-sm text-gray-500">{patient.date}</p>
+                    <p className="text-sm text-gray-500">ID: {patient.patient_id} • {patient.date}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     patient.status === 'Active' 
@@ -117,7 +260,7 @@ export function PatientsPage() {
             <p className="text-gray-500 mb-4">
               {searchQuery 
                 ? 'No patients match your search criteria'
-                : 'Connect to Supabase to view patients'
+                : 'Get started by adding your first patient'
               }
             </p>
             <Button onClick={() => setShowNewPatientModal(true)}>
@@ -139,38 +282,54 @@ export function PatientsPage() {
             <Input
               label="Last Name"
               placeholder="Enter last name"
+              value={newPatient.lastname}
+              onChange={(e) => setNewPatient({ ...newPatient, lastname: e.target.value })}
               required
               fullWidth
             />
             <Input
               label="First Name"
               placeholder="Enter first name"
+              value={newPatient.firstname}
+              onChange={(e) => setNewPatient({ ...newPatient, firstname: e.target.value })}
               required
               fullWidth
             />
             <Input
               label="Middle Name"
               placeholder="Enter middle name"
+              value={newPatient.middlename}
+              onChange={(e) => setNewPatient({ ...newPatient, middlename: e.target.value })}
               fullWidth
             />
             <Input
               type="date"
               label="Birth Date"
+              value={newPatient.birthdate}
+              onChange={(e) => setNewPatient({ ...newPatient, birthdate: e.target.value })}
+              required
               fullWidth
             />
             <Input
               label="Contact Number"
               placeholder="Enter contact number"
+              value={newPatient.contact_number}
+              onChange={(e) => setNewPatient({ ...newPatient, contact_number: e.target.value })}
               fullWidth
             />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gender
+                Gender *
               </label>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+              <select 
+                value={newPatient.gender}
+                onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as 'Male' | 'Female' | 'Other' })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
                 <option value="">Select gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>
@@ -178,6 +337,8 @@ export function PatientsPage() {
           <Input
             label="Address"
             placeholder="Enter full address"
+            value={newPatient.address}
+            onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
             fullWidth
           />
 
@@ -189,7 +350,7 @@ export function PatientsPage() {
             >
               Cancel
             </Button>
-            <Button fullWidth>
+            <Button onClick={handleCreatePatient} fullWidth>
               Save Patient
             </Button>
           </div>
