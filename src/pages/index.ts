@@ -1,0 +1,10 @@
+export { LoginPage } from './LoginPage';
+export { LoadingPage } from './LoadingPage';
+export { DashboardPage } from './DashboardPage';
+export { AccountPage } from './AccountPage';
+export { PatientsPage } from './PatientsPage';
+export { MyTasksPage } from './MyTasksPage';
+export { InformationPage } from './InformationPage';
+export { ReturningPage } from './ReturningPage';
+export { SchedulingPage } from './SchedulingPage';
+export { SurgeryPage } from './SurgeryPage';
