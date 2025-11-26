@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
+# VBE Eye Center (Lovable-Connected Mirror)
 
-## Project info
+> **Note:** This repository (`blank-slate-project`) is now a Lovable-connected mirror of the [vbeeyecenter](https://github.com/CelestialBrain/vbeeyecenter) codebase. It serves as the GitHub endpoint that Lovable uses for this project.
 
-**URL**: https://lovable.dev/projects/f5d731cf-4c3e-402f-8bf2-eac607ea1dd1
+A modern healthcare management application for VBE Eye Center, built with React, TypeScript, and Tailwind CSS. This is a complete refactoring of the FlutterFlow application to the React/JavaScript ecosystem.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Authentication**: Secure login with email/password, password reset functionality
+- **Dashboard**: Overview of patient statistics and quick actions
+- **Patient Management**: Search, add, and manage patient records
+- **Scheduling**: Appointment scheduling and calendar management
+- **Surgery Tracking**: Track surgical procedures and their status
+- **Account Management**: User profile, signature upload, and password change
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f5d731cf-4c3e-402f-8bf2-eac607ea1dd1) and start prompting.
+- **React 19** - UI Framework
+- **TypeScript** - Type Safety
+- **Vite** - Build Tool
+- **React Router 7** - Client-side Routing
+- **Tailwind CSS** - Utility-first CSS
+- **Supabase** - Backend as a Service (Auth, Database, Storage)
+- **Vitest** - Unit Testing
 
-Changes made via Lovable will be committed automatically to this repo.
+## Project Structure
 
-**Use your preferred IDE**
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Base UI components (Button, Input, Modal, etc.)
+│   ├── Layout.tsx      # Main app layout with sidebar
+│   ├── Sidebar.tsx     # Navigation sidebar
+│   └── ProtectedRoute.tsx  # Auth route wrapper
+├── context/            # React Context providers
+│   ├── AuthContext.tsx # Authentication state management
+│   └── AppContext.tsx  # Application state management
+├── lib/                # Utility libraries
+│   └── supabase.ts     # Supabase client configuration
+├── pages/              # Page components
+│   ├── LoginPage.tsx
+│   ├── LoadingPage.tsx
+│   ├── DashboardPage.tsx
+│   ├── AccountPage.tsx
+│   ├── PatientsPage.tsx
+│   ├── MyTasksPage.tsx
+│   ├── InformationPage.tsx
+│   ├── ReturningPage.tsx
+│   ├── SchedulingPage.tsx
+│   └── SurgeryPage.tsx
+├── types/              # TypeScript type definitions
+├── test/               # Test setup and utilities
+├── App.tsx             # Main application component
+├── main.tsx            # Application entry point
+└── index.css           # Global styles with Tailwind
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js 18+
+- npm or yarn
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. Clone the repository:
+```bash
+git clone https://github.com/CelestialBrain/blank-slate-project.git
+cd blank-slate-project
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Create a `.env` file with your Supabase credentials:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Available Scripts
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
 
-**Use GitHub Codespaces**
+## Pages & Routes
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Route | Page | Auth Required | Description |
+|-------|------|---------------|-------------|
+| `/` | Loading | No | Initial loading/redirect |
+| `/login` | Login | No | User authentication |
+| `/dashboard` | Dashboard | Yes | Main overview page |
+| `/patients` | Patients | Yes | Patient management |
+| `/my-tasks` | My Tasks | Yes | Task list and intake |
+| `/information` | Information | Yes | Patient details form |
+| `/returning` | Returning | Yes | Follow-up patients |
+| `/scheduling` | Scheduling | Yes | Appointment scheduling |
+| `/surgery` | Surgery | Yes | Surgery schedule |
+| `/account` | Account | Yes | User profile settings |
 
-## What technologies are used for this project?
+## Environment Variables
 
-This project is built with:
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key |
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Lovable Integration
 
-## How can I deploy this project?
+This repository is connected to Lovable for visual development. Any changes made through Lovable will be reflected here, and vice versa.
 
-Simply open [Lovable](https://lovable.dev/projects/f5d731cf-4c3e-402f-8bf2-eac607ea1dd1) and click on Share -> Publish.
+### Syncing with vbeeyecenter
 
-## Can I connect a custom domain to my Lovable project?
+This repository mirrors the `vbeeyecenter` codebase. To sync changes:
+1. Changes made in Lovable are pushed to this repository
+2. The source of truth for application logic is `CelestialBrain/vbeeyecenter`
+3. Updates from `vbeeyecenter` should be merged via pull requests
 
-Yes, you can!
+## Contributing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Create a feature branch from `main`
+2. Make your changes
+3. Run linting and tests
+4. Submit a pull request
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## License
+
+Private - VBE Eye Center
