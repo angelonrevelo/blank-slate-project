@@ -50,16 +50,16 @@ export function PatientsPage() {
   });
 
   const stageOptions = [
-    { value: 'new', label: 'New', color: 'bg-blue-100 text-blue-800' },
-    { value: 'file', label: 'Filing', color: 'bg-gray-100 text-gray-800' },
-    { value: 'va', label: 'Visual Acuity', color: 'bg-purple-100 text-purple-800' },
-    { value: 'opth', label: 'Ophthalmology', color: 'bg-indigo-100 text-indigo-800' },
-    { value: 'bio', label: 'Biometry', color: 'bg-cyan-100 text-cyan-800' },
-    { value: 'for_surgery', label: 'For Surgery', color: 'bg-orange-100 text-orange-800' },
-    { value: 'postponed', label: 'Postponed', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'clearance', label: 'Clearance', color: 'bg-pink-100 text-pink-800' },
-    { value: 'to_refer', label: 'To Refer', color: 'bg-red-100 text-red-800' },
-    { value: 'graduated', label: 'Graduated', color: 'bg-green-100 text-green-800' },
+    { value: 'new', label: 'New', variant: 'new' as const },
+    { value: 'file', label: 'Filing', variant: 'file' as const },
+    { value: 'va', label: 'Visual Acuity', variant: 'va' as const },
+    { value: 'opth', label: 'Ophthalmology', variant: 'opth' as const },
+    { value: 'bio', label: 'Biometry', variant: 'bio' as const },
+    { value: 'for_surgery', label: 'For Surgery', variant: 'for_surgery' as const },
+    { value: 'postponed', label: 'Postponed', variant: 'postponed' as const },
+    { value: 'clearance', label: 'Clearance', variant: 'clearance' as const },
+    { value: 'to_refer', label: 'To Refer', variant: 'to_refer' as const },
+    { value: 'graduated', label: 'Graduated', variant: 'graduated' as const },
   ];
 
   useEffect(() => {
@@ -326,7 +326,7 @@ export function PatientsPage() {
     if (!stage) return null;
     const option = stageOptions.find(s => s.value === stage);
     return option ? (
-      <Badge className={option.color}>
+      <Badge variant={option.variant}>
         {option.label}
       </Badge>
     ) : null;
@@ -651,8 +651,8 @@ export function PatientsPage() {
                     onChange={() => toggleStageFilter(option.value)}
                     className="rounded border-border text-primary focus:ring-primary"
                   />
-                  <span className={`text-sm px-2 py-0.5 rounded ${option.color}`}>
-                    {option.label}
+                  <span className="text-sm">
+                    <Badge variant={option.variant}>{option.label}</Badge>
                   </span>
                 </label>
               ))}

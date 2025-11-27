@@ -1,4 +1,5 @@
 import type { Patient } from '@/types';
+import { Badge } from '@/components/ui';
 
 interface PatientDataSheetProps {
   patient: Patient;
@@ -185,24 +186,16 @@ export function PatientDataSheet({
           <h3 className="text-sm font-semibold text-foreground mb-3">Diagnosis</h3>
           <div className="flex flex-wrap gap-2">
             {diagnosis.cataract && (
-              <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
-                Cataract
-              </span>
+              <Badge variant="for_surgery">Cataract</Badge>
             )}
             {diagnosis.pterygium && (
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                Pterygium
-              </span>
+              <Badge variant="new">Pterygium</Badge>
             )}
             {diagnosis.pseudophakia && (
-              <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                Pseudophakia
-              </span>
+              <Badge variant="surgery">Pseudophakia</Badge>
             )}
             {diagnosis.refraction_error && (
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                Refraction Error
-              </span>
+              <Badge variant="graduated">Refraction Error</Badge>
             )}
           </div>
         </div>
