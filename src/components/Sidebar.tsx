@@ -108,12 +108,12 @@ export function Sidebar({ currentPage }: SidebarProps) {
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10"
+        className="absolute -right-3 top-6 bg-card border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10"
       >
         {collapsed ? (
-          <ChevronRight className="h-4 w-4 text-gray-600" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         ) : (
-          <ChevronLeft className="h-4 w-4 text-gray-600" />
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
 

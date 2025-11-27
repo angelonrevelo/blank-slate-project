@@ -15,3 +15,4 @@ export { CalendarDayPicker } from './CalendarDayPicker';
 export { ImagePainter } from './ImagePainter';
 export { IOLSelectionTable } from './IOLSelectionTable';
 export { WebCameraCapture } from './WebCameraCapture';
+export { Select } from './Select';

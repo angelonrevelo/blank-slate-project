@@ -42,13 +42,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={`${fullWidth ? 'w-full' : ''}`}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
               {leftIcon}
             </div>
           )}
@@ -56,17 +56,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={inputType}
             className={`
-              block rounded-lg border transition-all duration-200
+              block rounded-lg border transition-all duration-200 bg-background text-foreground
               ${sizeStyles[size]}
               ${fullWidth ? 'w-full' : ''}
               ${leftIcon ? 'pl-10' : ''}
               ${rightIcon || showPasswordToggle ? 'pr-10' : ''}
               ${error 
                 ? 'border-error focus:ring-error focus:border-error' 
-                : 'border-gray-300 focus:ring-primary focus:border-primary'
+                : 'border-border focus:ring-primary focus:border-primary'
               }
               focus:outline-none focus:ring-2
-              disabled:bg-gray-100 disabled:cursor-not-allowed
+              disabled:bg-muted disabled:cursor-not-allowed
               ${className}
             `}
             {...props}
@@ -77,7 +77,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -92,13 +92,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                   )}
                 </button>
               ) : (
-                <span className="text-gray-400">{rightIcon}</span>
+                <span className="text-muted-foreground">{rightIcon}</span>
               )}
             </div>
           )}
         </div>
         {(error || helperText) && (
-          <p className={`mt-1 text-sm ${error ? 'text-error' : 'text-gray-500'}`}>
+          <p className={`mt-1 text-sm ${error ? 'text-error' : 'text-muted-foreground'}`}>
             {error || helperText}
           </p>
         )}
