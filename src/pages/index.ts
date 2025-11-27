@@ -8,3 +8,4 @@ export { InformationPage } from './InformationPage';
 export { ReturningPage } from './ReturningPage';
 export { SchedulingPage } from './SchedulingPage';
 export { SurgeryPage } from './SurgeryPage';
+export { SettingsPage } from './SettingsPage';

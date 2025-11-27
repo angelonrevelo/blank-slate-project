@@ -693,6 +693,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          branch: string
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          read: boolean
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          branch: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       patientcount: {
         Row: {
           branch: string
@@ -897,6 +933,7 @@ export type Database = {
           signature_link: string | null
           title: Database["public"]["Enums"]["title_type"]
           updated_at: string | null
+          user_preferences: Json | null
           username: string
         }
         Insert: {
@@ -908,6 +945,7 @@ export type Database = {
           signature_link?: string | null
           title: Database["public"]["Enums"]["title_type"]
           updated_at?: string | null
+          user_preferences?: Json | null
           username: string
         }
         Update: {
@@ -919,6 +957,7 @@ export type Database = {
           signature_link?: string | null
           title?: Database["public"]["Enums"]["title_type"]
           updated_at?: string | null
+          user_preferences?: Json | null
           username?: string
         }
         Relationships: []
@@ -1189,6 +1228,13 @@ export type Database = {
         | "surgery_scheduling"
         | "biometry_test"
       laterality_type: "OD" | "OS" | "OU"
+      notification_type:
+        | "task_assigned"
+        | "surgery_scheduled"
+        | "clearance_pending"
+        | "followup_due"
+        | "patient_assigned"
+        | "system"
       patient_stage:
         | "new"
         | "file"
@@ -1385,6 +1431,14 @@ export const Constants = {
         "biometry_test",
       ],
       laterality_type: ["OD", "OS", "OU"],
+      notification_type: [
+        "task_assigned",
+        "surgery_scheduled",
+        "clearance_pending",
+        "followup_due",
+        "patient_assigned",
+        "system",
+      ],
       patient_stage: [
         "new",
         "file",

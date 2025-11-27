@@ -1,26 +1,34 @@
 import { useState, useCallback } from 'react';
 
-type ToastType = {
+export type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info' | 'destructive';
+
+export interface Toast {
+  id: string;
   title: string;
   description?: string;
-  variant?: 'default' | 'destructive';
-};
+  variant?: ToastVariant;
+}
 
 export function useToast() {
-  const [, setToast] = useState<ToastType | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((props: ToastType) => {
-    setToast(props);
-    // Basic console log for now - can be enhanced with actual toast UI
-    if (props.variant === 'destructive') {
-      console.error(`${props.title}: ${props.description}`);
-    } else {
-      console.log(`${props.title}: ${props.description}`);
-    }
+  const toast = useCallback((props: Omit<Toast, 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast = { ...props, id, variant: props.variant || 'default' };
     
-    // Auto dismiss after 3 seconds
-    setTimeout(() => setToast(null), 3000);
+    setToasts((prev) => [...prev, newToast]);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 5000);
+    
+    return id;
   }, []);
 
-  return { toast };
+  const dismiss = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { toast, toasts, dismiss };
 }
