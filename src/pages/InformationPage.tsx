@@ -910,7 +910,7 @@ export function InformationPage() {
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-card border-b px-6 md:px-8 py-2.5">
+      <header className="bg-secondary px-6 md:px-8 py-4 border-b border-border">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -919,7 +919,7 @@ export function InformationPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-foreground">
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground">
               {patientData.lastname && patientData.firstname
                 ? `${patientData.lastname}, ${patientData.firstname}`
                 : 'Patient Information'}
@@ -934,7 +934,7 @@ export function InformationPage() {
       </header>
 
       {/* Tabs */}
-      <div className="px-6 md:px-8 bg-card border-b">
+      <div className="px-6 md:px-8 bg-card border-b border-border">
         <div className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -959,7 +959,7 @@ export function InformationPage() {
           {activeTab === 'InfoHistory' && (
             <div className="space-y-4">
               {/* Patient Photo */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Patient Photo</h2>
                 <div className="flex items-center gap-4">
                   {patientPhoto ? (
@@ -993,7 +993,7 @@ export function InformationPage() {
               </div>
 
               {/* Patient Identification */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Patient Identification</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Input
@@ -1031,7 +1031,7 @@ export function InformationPage() {
               </div>
 
               {/* Demographics */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Demographics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <Input
@@ -1085,7 +1085,7 @@ export function InformationPage() {
               </div>
 
               {/* Contact Information */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Contact Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
@@ -1115,7 +1115,7 @@ export function InformationPage() {
               </div>
 
               {/* PhilHealth Information */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">PhilHealth Information</h2>
                 <div className="space-y-3">
                   <Switch
@@ -1155,7 +1155,7 @@ export function InformationPage() {
               </div>
 
               {/* Chief Complaint */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Chief Complaint</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {Object.entries(chiefComplaints).map(([key, value]) => (
@@ -1175,7 +1175,7 @@ export function InformationPage() {
               </div>
 
               {/* Ocular History */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Ocular History</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {Object.entries(ocularHistory).map(([key, value]) => (
@@ -1193,7 +1193,7 @@ export function InformationPage() {
               </div>
 
               {/* Past Medical History */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Past Medical History</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {Object.entries(pastMedicalHistory).map(([key, value]) => (
@@ -1213,7 +1213,7 @@ export function InformationPage() {
               </div>
 
               {/* Previous Eye Surgery */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-foreground mb-3">Previous Eye Surgery</h2>
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1291,7 +1291,7 @@ export function InformationPage() {
                   <h3 className="text-sm font-semibold text-foreground bg-blue-50 dark:bg-blue-950 p-2 rounded">OD (Right Eye)</h3>
                   
                   {/* Visual Acuity Near - OD */}
-                  <div className="bg-card rounded-lg shadow-sm p-3">
+                  <div className="bg-card rounded-xl border border-border shadow-sm p-3">
                     <h4 className="text-xs font-semibold text-foreground mb-2">Visual Acuity (Near)</h4>
                     <div className="space-y-2">
                       <Input label="OD" value={visualAcuity.nearOd} onChange={(e) => setVisualAcuity({...visualAcuity, nearOd: e.target.value})} fullWidth size="sm" />
@@ -1305,7 +1305,7 @@ export function InformationPage() {
                   </div>
 
                   {/* Visual Acuity Distance - OD */}
-                  <div className="bg-card rounded-lg shadow-sm p-3">
+                  <div className="bg-card rounded-xl border border-border shadow-sm p-3">
                     <h4 className="text-xs font-semibold text-foreground mb-2">Visual Acuity (Distance)</h4>
                     <div className="space-y-2">
                       <Input label="OD" value={visualAcuity.distOd} onChange={(e) => setVisualAcuity({...visualAcuity, distOd: e.target.value})} fullWidth size="sm" />
@@ -1323,7 +1323,7 @@ export function InformationPage() {
                   <h3 className="text-sm font-semibold text-foreground bg-green-50 dark:bg-green-950 p-2 rounded">OS (Left Eye)</h3>
                   
                   {/* Visual Acuity Near - OS */}
-                  <div className="bg-card rounded-lg shadow-sm p-3">
+                  <div className="bg-card rounded-xl border border-border shadow-sm p-3">
                     <h4 className="text-xs font-semibold text-foreground mb-2">Visual Acuity (Near)</h4>
                     <div className="space-y-2">
                       <Input label="OS" value={visualAcuity.nearOs} onChange={(e) => setVisualAcuity({...visualAcuity, nearOs: e.target.value})} fullWidth size="sm" />
@@ -1337,7 +1337,7 @@ export function InformationPage() {
                   </div>
 
                   {/* Visual Acuity Distance - OS */}
-                  <div className="bg-card rounded-lg shadow-sm p-3">
+                  <div className="bg-card rounded-xl border border-border shadow-sm p-3">
                     <h4 className="text-xs font-semibold text-foreground mb-2">Visual Acuity (Distance)</h4>
                     <div className="space-y-2">
                       <Input label="OS" value={visualAcuity.distOs} onChange={(e) => setVisualAcuity({...visualAcuity, distOs: e.target.value})} fullWidth size="sm" />
@@ -1360,7 +1360,7 @@ export function InformationPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* OD Drawing */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OD (Right Eye)</h3>
                   <ImagePainter
                     width={400}
@@ -1371,7 +1371,7 @@ export function InformationPage() {
                 </div>
 
                 {/* OS Drawing */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OS (Left Eye)</h3>
                   <ImagePainter
                     width={400}
@@ -1391,7 +1391,7 @@ export function InformationPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* OD Findings */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OD (Right Eye)</h3>
                   <textarea
                     value={slitLamp.od}
@@ -1403,7 +1403,7 @@ export function InformationPage() {
                 </div>
 
                 {/* OS Findings */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OS (Left Eye)</h3>
                   <textarea
                     value={slitLamp.os}
@@ -1424,7 +1424,7 @@ export function InformationPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* OD Findings */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OD (Right Eye)</h3>
                   <div className="space-y-3">
                     <div>
@@ -1455,7 +1455,7 @@ export function InformationPage() {
                 </div>
 
                 {/* OS Findings */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OS (Left Eye)</h3>
                   <div className="space-y-3">
                     <div>
@@ -1492,7 +1492,7 @@ export function InformationPage() {
           {activeTab === 'Diagnosis' && (
             <div className="space-y-4">
               {/* Pseudophakia */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1521,7 +1521,7 @@ export function InformationPage() {
               </div>
 
               {/* Cataract */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1562,7 +1562,7 @@ export function InformationPage() {
               </div>
 
               {/* Pterygium */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1584,7 +1584,7 @@ export function InformationPage() {
               </div>
 
               {/* Refraction Error */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1616,7 +1616,7 @@ export function InformationPage() {
               </div>
 
               {/* Other Diagnosis */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1653,7 +1653,7 @@ export function InformationPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* OD Measurements */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OD (Right Eye)</h3>
                   <div className="space-y-3">
                     <Input label="K1" value={biometry.odK1} onChange={(e) => setBiometry({...biometry, odK1: e.target.value})} fullWidth size="sm" />
@@ -1664,7 +1664,7 @@ export function InformationPage() {
                 </div>
 
                 {/* OS Measurements */}
-                <div className="bg-card rounded-lg shadow-sm p-4">
+                <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-3">OS (Left Eye)</h3>
                   <div className="space-y-3">
                     <Input label="K1" value={biometry.osK1} onChange={(e) => setBiometry({...biometry, osK1: e.target.value})} fullWidth size="sm" />
@@ -1676,7 +1676,7 @@ export function InformationPage() {
               </div>
 
               {/* IOL Power Selection */}
-              <div className="bg-card rounded-lg shadow-sm p-4 mt-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4 mt-4">
                 <IOLSelectionTable
                   initialValues={iolPowers}
                   onChange={setIolPowers}
@@ -1690,7 +1690,7 @@ export function InformationPage() {
             <div className="space-y-4">
               <h2 className="text-base font-semibold text-foreground mb-4">Medical Clearance</h2>
               
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Upload Clearance Documents</h3>
                 <FileUpload
                   label="Medical Clearance Documents"
@@ -1711,7 +1711,7 @@ export function InformationPage() {
               </div>
 
               {/* Surgery Scheduling */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Surgery Scheduling</h3>
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1776,7 +1776,7 @@ export function InformationPage() {
               <h2 className="text-base font-semibold text-foreground mb-4">Treatment Plan</h2>
 
               {/* For Biometry */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1800,7 +1800,7 @@ export function InformationPage() {
               </div>
 
               {/* For VA */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1824,7 +1824,7 @@ export function InformationPage() {
               </div>
 
               {/* For Surgery */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1853,7 +1853,7 @@ export function InformationPage() {
               </div>
 
               {/* Postpone Surgery */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1885,7 +1885,7 @@ export function InformationPage() {
               </div>
 
               {/* Requires Clearance */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1909,7 +1909,7 @@ export function InformationPage() {
               </div>
 
               {/* To Refer */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -1940,7 +1940,7 @@ export function InformationPage() {
               </div>
 
               {/* Graduated */}
-              <div className="bg-card rounded-lg shadow-sm p-4">
+              <div className="bg-card rounded-xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <input
                     type="checkbox"
