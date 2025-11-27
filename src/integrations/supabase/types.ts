@@ -458,40 +458,88 @@ export type Database = {
       }
       followups: {
         Row: {
+          acceptdate: string | null
           branch: string
           created_at: string | null
           followup_date: string
+          forbiometry: boolean | null
+          forbiometrynotes: string | null
+          forsurgery: boolean | null
+          forsurgerynotes: string | null
+          forva: boolean | null
+          forvanotes: string | null
+          graduated: boolean | null
+          graduatednotes: string | null
           id: string
           intake_id: string | null
           notes: string | null
           patient_id: string
+          postponesurgery: boolean | null
+          reminddate: string | null
+          returndate: string | null
           status: Database["public"]["Enums"]["followup_status"] | null
+          surgeryeye: Database["public"]["Enums"]["laterality_type"] | null
+          torefer: boolean | null
+          toreferdoctor: string | null
+          torefernotes: string | null
           workflow_status:
             | Database["public"]["Enums"]["followup_workflow_type"]
             | null
         }
         Insert: {
+          acceptdate?: string | null
           branch: string
           created_at?: string | null
           followup_date: string
+          forbiometry?: boolean | null
+          forbiometrynotes?: string | null
+          forsurgery?: boolean | null
+          forsurgerynotes?: string | null
+          forva?: boolean | null
+          forvanotes?: string | null
+          graduated?: boolean | null
+          graduatednotes?: string | null
           id?: string
           intake_id?: string | null
           notes?: string | null
           patient_id: string
+          postponesurgery?: boolean | null
+          reminddate?: string | null
+          returndate?: string | null
           status?: Database["public"]["Enums"]["followup_status"] | null
+          surgeryeye?: Database["public"]["Enums"]["laterality_type"] | null
+          torefer?: boolean | null
+          toreferdoctor?: string | null
+          torefernotes?: string | null
           workflow_status?:
             | Database["public"]["Enums"]["followup_workflow_type"]
             | null
         }
         Update: {
+          acceptdate?: string | null
           branch?: string
           created_at?: string | null
           followup_date?: string
+          forbiometry?: boolean | null
+          forbiometrynotes?: string | null
+          forsurgery?: boolean | null
+          forsurgerynotes?: string | null
+          forva?: boolean | null
+          forvanotes?: string | null
+          graduated?: boolean | null
+          graduatednotes?: string | null
           id?: string
           intake_id?: string | null
           notes?: string | null
           patient_id?: string
+          postponesurgery?: boolean | null
+          reminddate?: string | null
+          returndate?: string | null
           status?: Database["public"]["Enums"]["followup_status"] | null
+          surgeryeye?: Database["public"]["Enums"]["laterality_type"] | null
+          torefer?: boolean | null
+          toreferdoctor?: string | null
+          torefernotes?: string | null
           workflow_status?:
             | Database["public"]["Enums"]["followup_workflow_type"]
             | null
@@ -516,59 +564,122 @@ export type Database = {
       intakes: {
         Row: {
           allergies: string | null
+          assigned_doctor: string | null
+          assigned_nurse: string | null
           assigned_to: string | null
           branch: string
           chief_complaint: string | null
           chief_complaints: Json | null
           created_at: string | null
+          ended_bio: string | null
+          ended_file: string | null
+          ended_opth: string | null
+          ended_va: string | null
+          endorser_opd: string | null
           history: string | null
           id: string
+          in_progress: boolean | null
           medications: string | null
           ocular_history: Json | null
           past_medical_history: Json | null
           patient_id: string
+          result_va: Json | null
+          stage: Database["public"]["Enums"]["intake_stage"] | null
+          started_bio: string | null
+          started_file: string | null
+          started_opth: string | null
+          started_va: string | null
           status: Database["public"]["Enums"]["intake_status"] | null
           task_type: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date: string | null
         }
         Insert: {
           allergies?: string | null
+          assigned_doctor?: string | null
+          assigned_nurse?: string | null
           assigned_to?: string | null
           branch: string
           chief_complaint?: string | null
           chief_complaints?: Json | null
           created_at?: string | null
+          ended_bio?: string | null
+          ended_file?: string | null
+          ended_opth?: string | null
+          ended_va?: string | null
+          endorser_opd?: string | null
           history?: string | null
           id?: string
+          in_progress?: boolean | null
           medications?: string | null
           ocular_history?: Json | null
           past_medical_history?: Json | null
           patient_id: string
+          result_va?: Json | null
+          stage?: Database["public"]["Enums"]["intake_stage"] | null
+          started_bio?: string | null
+          started_file?: string | null
+          started_opth?: string | null
+          started_va?: string | null
           status?: Database["public"]["Enums"]["intake_status"] | null
           task_type?: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date?: string | null
         }
         Update: {
           allergies?: string | null
+          assigned_doctor?: string | null
+          assigned_nurse?: string | null
           assigned_to?: string | null
           branch?: string
           chief_complaint?: string | null
           chief_complaints?: Json | null
           created_at?: string | null
+          ended_bio?: string | null
+          ended_file?: string | null
+          ended_opth?: string | null
+          ended_va?: string | null
+          endorser_opd?: string | null
           history?: string | null
           id?: string
+          in_progress?: boolean | null
           medications?: string | null
           ocular_history?: Json | null
           past_medical_history?: Json | null
           patient_id?: string
+          result_va?: Json | null
+          stage?: Database["public"]["Enums"]["intake_stage"] | null
+          started_bio?: string | null
+          started_file?: string | null
+          started_opth?: string | null
+          started_va?: string | null
           status?: Database["public"]["Enums"]["intake_status"] | null
           task_type?: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "intakes_assigned_doctor_fkey"
+            columns: ["assigned_doctor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intakes_assigned_nurse_fkey"
+            columns: ["assigned_nurse"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "intakes_assigned_to_fkey"
             columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intakes_endorser_opd_fkey"
+            columns: ["endorser_opd"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -582,17 +693,64 @@ export type Database = {
           },
         ]
       }
+      patientcount: {
+        Row: {
+          branch: string
+          created_at: string | null
+          date: string
+          id: string
+          new_patients: number | null
+          returning_patients: number | null
+          surgeries_completed: number | null
+          surgeries_scheduled: number | null
+          total_patients: number | null
+        }
+        Insert: {
+          branch: string
+          created_at?: string | null
+          date: string
+          id?: string
+          new_patients?: number | null
+          returning_patients?: number | null
+          surgeries_completed?: number | null
+          surgeries_scheduled?: number | null
+          total_patients?: number | null
+        }
+        Update: {
+          branch?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          new_patients?: number | null
+          returning_patients?: number | null
+          surgeries_completed?: number | null
+          surgeries_scheduled?: number | null
+          total_patients?: number | null
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           address: string | null
+          age: number | null
+          biometry_od: Json | null
+          biometry_os: Json | null
           birthdate: string
           branch: string
           civil_status: Database["public"]["Enums"]["civil_status_type"] | null
+          clearance_approveddateod: string | null
+          clearance_approveddateos: string | null
+          clearance_fileod: string | null
+          clearance_fileos: string | null
+          clearance_requestdateod: string | null
+          clearance_requestdateos: string | null
           contact_number: string | null
           created_at: string | null
           created_by: string | null
           firstname: string
           gender: Database["public"]["Enums"]["gender_type"]
+          graduateddate: string | null
+          graduatednotes: string | null
           id: string
           lastname: string
           middlename: string | null
@@ -603,24 +761,45 @@ export type Database = {
             | null
           philhealth_member: boolean | null
           philhealth_no: string | null
+          postponedate: string | null
+          postponenotes: string | null
           previous_surgery_notes: string | null
           previous_surgery_od: boolean | null
           previous_surgery_od_date: string | null
           previous_surgery_os: boolean | null
           previous_surgery_os_date: string | null
           referred_by: string | null
+          stage: Database["public"]["Enums"]["patient_stage"] | null
           status: Database["public"]["Enums"]["patient_status"] | null
+          surgery_eye: Database["public"]["Enums"]["laterality_type"] | null
+          surgerydate: string | null
+          surgerydate_od: string | null
+          surgerydate_os: string | null
+          toreferdate: string | null
+          torefernotes: string | null
+          visit_count: number | null
         }
         Insert: {
           address?: string | null
+          age?: number | null
+          biometry_od?: Json | null
+          biometry_os?: Json | null
           birthdate: string
           branch: string
           civil_status?: Database["public"]["Enums"]["civil_status_type"] | null
+          clearance_approveddateod?: string | null
+          clearance_approveddateos?: string | null
+          clearance_fileod?: string | null
+          clearance_fileos?: string | null
+          clearance_requestdateod?: string | null
+          clearance_requestdateos?: string | null
           contact_number?: string | null
           created_at?: string | null
           created_by?: string | null
           firstname: string
           gender: Database["public"]["Enums"]["gender_type"]
+          graduateddate?: string | null
+          graduatednotes?: string | null
           id?: string
           lastname: string
           middlename?: string | null
@@ -631,24 +810,45 @@ export type Database = {
             | null
           philhealth_member?: boolean | null
           philhealth_no?: string | null
+          postponedate?: string | null
+          postponenotes?: string | null
           previous_surgery_notes?: string | null
           previous_surgery_od?: boolean | null
           previous_surgery_od_date?: string | null
           previous_surgery_os?: boolean | null
           previous_surgery_os_date?: string | null
           referred_by?: string | null
+          stage?: Database["public"]["Enums"]["patient_stage"] | null
           status?: Database["public"]["Enums"]["patient_status"] | null
+          surgery_eye?: Database["public"]["Enums"]["laterality_type"] | null
+          surgerydate?: string | null
+          surgerydate_od?: string | null
+          surgerydate_os?: string | null
+          toreferdate?: string | null
+          torefernotes?: string | null
+          visit_count?: number | null
         }
         Update: {
           address?: string | null
+          age?: number | null
+          biometry_od?: Json | null
+          biometry_os?: Json | null
           birthdate?: string
           branch?: string
           civil_status?: Database["public"]["Enums"]["civil_status_type"] | null
+          clearance_approveddateod?: string | null
+          clearance_approveddateos?: string | null
+          clearance_fileod?: string | null
+          clearance_fileos?: string | null
+          clearance_requestdateod?: string | null
+          clearance_requestdateos?: string | null
           contact_number?: string | null
           created_at?: string | null
           created_by?: string | null
           firstname?: string
           gender?: Database["public"]["Enums"]["gender_type"]
+          graduateddate?: string | null
+          graduatednotes?: string | null
           id?: string
           lastname?: string
           middlename?: string | null
@@ -659,13 +859,23 @@ export type Database = {
             | null
           philhealth_member?: boolean | null
           philhealth_no?: string | null
+          postponedate?: string | null
+          postponenotes?: string | null
           previous_surgery_notes?: string | null
           previous_surgery_od?: boolean | null
           previous_surgery_od_date?: string | null
           previous_surgery_os?: boolean | null
           previous_surgery_os_date?: string | null
           referred_by?: string | null
+          stage?: Database["public"]["Enums"]["patient_stage"] | null
           status?: Database["public"]["Enums"]["patient_status"] | null
+          surgery_eye?: Database["public"]["Enums"]["laterality_type"] | null
+          surgerydate?: string | null
+          surgerydate_od?: string | null
+          surgerydate_os?: string | null
+          toreferdate?: string | null
+          torefernotes?: string | null
+          visit_count?: number | null
         }
         Relationships: [
           {
@@ -769,41 +979,83 @@ export type Database = {
       }
       surgeries: {
         Row: {
+          active: boolean | null
+          admitted_time: string | null
           branch: string
+          cancelreason: string | null
           created_at: string | null
+          ended_prep: string | null
+          ended_prog: string | null
+          ended_recovery: string | null
+          ended_waiting: string | null
           eye_operated: Database["public"]["Enums"]["eye_laterality"] | null
           id: string
           iol_power: string | null
           patient_id: string
           procedure: string
+          returndate: string | null
           scheduled_date: string
           scheduled_time: string
+          scrub_nurse: string | null
+          stage: Database["public"]["Enums"]["surgery_stage"] | null
+          started_prep: string | null
+          started_prog: string | null
+          started_recovery: string | null
+          started_waiting: string | null
           status: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id: string | null
         }
         Insert: {
+          active?: boolean | null
+          admitted_time?: string | null
           branch: string
+          cancelreason?: string | null
           created_at?: string | null
+          ended_prep?: string | null
+          ended_prog?: string | null
+          ended_recovery?: string | null
+          ended_waiting?: string | null
           eye_operated?: Database["public"]["Enums"]["eye_laterality"] | null
           id?: string
           iol_power?: string | null
           patient_id: string
           procedure: string
+          returndate?: string | null
           scheduled_date: string
           scheduled_time: string
+          scrub_nurse?: string | null
+          stage?: Database["public"]["Enums"]["surgery_stage"] | null
+          started_prep?: string | null
+          started_prog?: string | null
+          started_recovery?: string | null
+          started_waiting?: string | null
           status?: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id?: string | null
         }
         Update: {
+          active?: boolean | null
+          admitted_time?: string | null
           branch?: string
+          cancelreason?: string | null
           created_at?: string | null
+          ended_prep?: string | null
+          ended_prog?: string | null
+          ended_recovery?: string | null
+          ended_waiting?: string | null
           eye_operated?: Database["public"]["Enums"]["eye_laterality"] | null
           id?: string
           iol_power?: string | null
           patient_id?: string
           procedure?: string
+          returndate?: string | null
           scheduled_date?: string
           scheduled_time?: string
+          scrub_nurse?: string | null
+          stage?: Database["public"]["Enums"]["surgery_stage"] | null
+          started_prep?: string | null
+          started_prog?: string | null
+          started_recovery?: string | null
+          started_waiting?: string | null
           status?: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id?: string | null
         }
@@ -813,6 +1065,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_scrub_nurse_fkey"
+            columns: ["scrub_nurse"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -845,11 +1104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      workload: {
+        Row: {
+          branch: string
+          created_at: string | null
+          date: string
+          doctor_id: string
+          id: string
+          patient_count: number | null
+        }
+        Insert: {
+          branch: string
+          created_at?: string | null
+          date: string
+          doctor_id: string
+          id?: string
+          patient_count?: number | null
+        }
+        Update: {
+          branch?: string
+          created_at?: string | null
+          date?: string
+          doctor_id?: string
+          id?: string
+          patient_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workload_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_age: { Args: { birthdate: string }; Returns: number }
+      get_next_patient_id: { Args: { p_branch: string }; Returns: string }
       get_user_branch: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -884,6 +1180,7 @@ export type Database = {
         | "post_op_evaluation"
         | "doctor_referral"
       gender_type: "Male" | "Female" | "Other"
+      intake_stage: "file" | "va" | "opth" | "bio" | "completed"
       intake_status: "Pending" | "Completed" | "Cancelled"
       intake_task_type:
         | "patient_record_creation"
@@ -891,9 +1188,30 @@ export type Database = {
         | "ophthalmology_eval"
         | "surgery_scheduling"
         | "biometry_test"
+      laterality_type: "OD" | "OS" | "OU"
+      patient_stage:
+        | "new"
+        | "file"
+        | "va"
+        | "opth"
+        | "bio"
+        | "for_surgery"
+        | "postponed"
+        | "clearance"
+        | "to_refer"
+        | "graduated"
+        | "none"
       patient_status: "Active" | "Inactive"
       philhealth_category_type: "Member" | "Dependent" | "Indigent" | "Senior"
       schedule_status: "Scheduled" | "Completed" | "Cancelled"
+      surgery_stage:
+        | "scheduled"
+        | "waiting"
+        | "prep"
+        | "in_progress"
+        | "recovery"
+        | "completed"
+        | "cancelled"
       surgery_status: "Scheduled" | "In Progress" | "Completed" | "Cancelled"
       title_type:
         | "OPD"
@@ -1057,6 +1375,7 @@ export const Constants = {
         "doctor_referral",
       ],
       gender_type: ["Male", "Female", "Other"],
+      intake_stage: ["file", "va", "opth", "bio", "completed"],
       intake_status: ["Pending", "Completed", "Cancelled"],
       intake_task_type: [
         "patient_record_creation",
@@ -1065,9 +1384,32 @@ export const Constants = {
         "surgery_scheduling",
         "biometry_test",
       ],
+      laterality_type: ["OD", "OS", "OU"],
+      patient_stage: [
+        "new",
+        "file",
+        "va",
+        "opth",
+        "bio",
+        "for_surgery",
+        "postponed",
+        "clearance",
+        "to_refer",
+        "graduated",
+        "none",
+      ],
       patient_status: ["Active", "Inactive"],
       philhealth_category_type: ["Member", "Dependent", "Indigent", "Senior"],
       schedule_status: ["Scheduled", "Completed", "Cancelled"],
+      surgery_stage: [
+        "scheduled",
+        "waiting",
+        "prep",
+        "in_progress",
+        "recovery",
+        "completed",
+        "cancelled",
+      ],
       surgery_status: ["Scheduled", "In Progress", "Completed", "Cancelled"],
       title_type: [
         "OPD",
