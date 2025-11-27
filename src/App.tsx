@@ -14,6 +14,7 @@ import {
   SchedulingPage,
   SurgeryPage,
 } from '@/pages';
+import StatusPage from '@/pages/StatusPage';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
               <Route path="/my-tasks" element={<MyTasksPage />} />
               <Route path="/information" element={<InformationPage />} />
               <Route path="/returning" element={<ReturningPage />} />
+              <Route path="/status" element={<StatusPage />} />
               <Route path="/scheduling" element={<SchedulingPage />} />
               <Route path="/surgery" element={<SurgeryPage />} />
             </Route>

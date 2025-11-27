@@ -1,80 +1,115 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppState } from '@/context/AppContext';
-import { Input, LoadingSpinner } from '@/components/ui';
 import { supabase } from '@/integrations/supabase/client';
-
-type FollowUp = {
-  id: string;
-  patient: string;
-  date: string;
-  notes: string;
-  status: string;
-};
+import { useAuth } from '@/context/AuthContext';
+import { Input, LoadingSpinner } from '@/components/ui';
+import { KanbanBoard, type KanbanItem } from '@/components/KanbanBoard';
 
 export function ReturningPage() {
   const navigate = useNavigate();
-  const { viewingBranch } = useAppState();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const { user } = useAuth();
+  const [kanbanItems, setKanbanItems] = useState<KanbanItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+
+  const columns = [
+    { id: 'clearance', title: 'Clearance', color: 'blue' },
+    { id: 'medical_management', title: 'Medical Management', color: 'green' },
+    { id: 'surgery_board', title: 'Surgery Board', color: 'purple' },
+    { id: 'post_op_evaluation', title: 'Post-Op Eval', color: 'orange' },
+    { id: 'doctor_referral', title: 'Doctor Referral', color: 'red' },
+  ];
 
   useEffect(() => {
-    fetchFollowUps();
-  }, [viewingBranch, selectedDate]);
+    fetchFollowups();
+  }, [user, selectedDate]);
 
-  const fetchFollowUps = async () => {
-    setLoading(true);
+  const fetchFollowups = async () => {
+    if (!user) return;
+
     try {
-      let query = supabase
+      setLoading(true);
+
+      const { data, error } = await supabase
         .from('followups')
         .select(`
           id,
+          workflow_status,
           followup_date,
-          notes,
-          status,
-          patient:patients(firstname, lastname)
+          created_at,
+          patients!inner (
+            id,
+            patient_id,
+            firstname,
+            lastname
+          )
         `)
-        .eq('branch', viewingBranch)
-        .order('followup_date', { ascending: true });
-
-      if (selectedDate) {
-        query = query.eq('followup_date', selectedDate);
-      }
-
-      const { data, error } = await query;
+        .eq('followup_date', selectedDate)
+        .eq('status', 'Scheduled')
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const formattedFollowUps: FollowUp[] = (data || []).map((f: any) => ({
-        id: f.id,
-        patient: `${f.patient.firstname} ${f.patient.lastname}`,
-        date: new Date(f.followup_date).toLocaleDateString(),
-        notes: f.notes || 'No notes',
-        status: f.status,
-      }));
+      // Transform data to Kanban items
+      const items: KanbanItem[] = data?.map(followup => {
+        const waitTime = followup.created_at ? calculateWaitTime(followup.created_at) : '0m';
 
-      // Apply search filter
-      if (searchQuery) {
-        const filtered = formattedFollowUps.filter(f =>
-          f.patient.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setFollowUps(filtered);
-      } else {
-        setFollowUps(formattedFollowUps);
-      }
+        return {
+          id: followup.id,
+          patientName: `${followup.patients.lastname}, ${followup.patients.firstname}`,
+          patientId: followup.patients.patient_id,
+          waitTime,
+          status: getStatusBadge(followup.workflow_status),
+          column: followup.workflow_status || 'clearance',
+        };
+      }) || [];
+
+      setKanbanItems(items);
     } catch (error) {
-      console.error('Error fetching follow-ups:', error);
+      console.error('Error fetching followups:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchFollowUps();
-  }, [searchQuery]);
+  const getStatusBadge = (workflowStatus: string | null): string => {
+    const statusMap: Record<string, string> = {
+      clearance: 'Checkup',
+      medical_management: 'Revisit',
+      surgery_board: 'Surgery',
+      post_op_evaluation: 'Graduated',
+      doctor_referral: 'Revisit',
+    };
+    return workflowStatus ? statusMap[workflowStatus] || 'Checkup' : 'Checkup';
+  };
+
+  const calculateWaitTime = (createdAt: string): string => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 60) return `${diffMins}m`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d`;
+  };
+
+  const handleCardClick = (item: KanbanItem) => {
+    // Navigate to patient information page
+    navigate(`/information?followupId=${item.id}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -85,86 +120,25 @@ export function ReturningPage() {
             Returning Patients
           </h1>
           
-          <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-            {viewingBranch} Branch
-          </span>
+          {/* Date Filter */}
+          <div className="w-full md:w-auto">
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full md:w-auto"
+            />
+          </div>
         </div>
       </header>
 
-      {/* Filters */}
-      <div className="px-6 md:px-10 py-4 bg-white border-b">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              type="search"
-              placeholder="Search returning patients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              fullWidth
-              leftIcon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              }
-            />
-          </div>
-          
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="md:w-48"
-          />
-        </div>
-      </div>
-
-      {/* Follow-up List */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : followUps.length > 0 ? (
-          <div className="grid gap-4">
-            {followUps.map((followUp) => (
-              <div
-                key={followUp.id}
-                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/information`, { state: { visitID: followUp.id } })}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{followUp.patient}</h3>
-                    <p className="text-sm text-gray-500">{followUp.notes}</p>
-                    <p className="text-xs text-gray-400 mt-1">Follow-up date: {followUp.date}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    followUp.status === 'Scheduled'
-                      ? 'bg-blue-100 text-blue-800'
-                      : followUp.status === 'Completed'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {followUp.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <svg className="w-16 h-16 text-gray-300 mb-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Returning Patients</h3>
-            <p className="text-gray-500">
-              {selectedDate || searchQuery
-                ? 'No follow-up appointments match your search'
-                : 'No follow-up appointments scheduled'
-              }
-            </p>
-          </div>
-        )}
+      {/* Main Content - Kanban Board */}
+      <div className="flex-1 p-6 md:px-10 overflow-auto">
+        <KanbanBoard
+          columns={columns}
+          items={kanbanItems}
+          onCardClick={handleCardClick}
+        />
       </div>
     </div>
   );

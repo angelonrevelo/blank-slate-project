@@ -7,3 +7,7 @@ export { Badge } from './Badge';
 export { Avatar, AvatarImage, AvatarFallback } from './Avatar';
 export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from './Table';
 export * from './DropdownMenu';
+export { Switch } from './Switch';
+export { EyeSelector } from './EyeSelector';
+export { FileUpload } from './FileUpload';
+export { SignaturePad } from './SignaturePad';

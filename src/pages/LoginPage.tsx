@@ -7,7 +7,7 @@ import { Button, Input, Checkbox, Modal } from '@/components/ui';
 export function LoginPage() {
   const navigate = useNavigate();
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
-  const { remLogin, setRemLogin } = useAppState();
+  const { remLogin, setRemLogin, setLoginBranch, loginBranch } = useAppState();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -93,6 +93,34 @@ export function LoginPage() {
           className="w-[180px] h-auto object-contain"
         />
       </div>
+
+      {/* Branch Selector */}
+      {!isSignUp && !signUpSuccess && (
+        <div className="mb-4 animate-slide-up flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLoginBranch('Quezon')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              loginBranch === 'Quezon'
+                ? 'bg-primary text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Quezon City
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoginBranch('Tanauan')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              loginBranch === 'Tanauan'
+                ? 'bg-primary text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Tanauan City
+          </button>
+        </div>
+      )}
 
       {/* Welcome text */}
       <div className="text-center mb-5 animate-slide-up">
