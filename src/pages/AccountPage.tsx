@@ -260,14 +260,14 @@ export function AccountPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
-        <h1 className="text-3xl md:text-4xl font-medium text-gray-900">
+      <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
+        <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
           Account
         </h1>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
+      <div className="flex-1 p-6 md:p-8 overflow-auto">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Card */}
           <div className="bg-card rounded-xl shadow-sm p-6 border border-border">

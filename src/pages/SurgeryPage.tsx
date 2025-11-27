@@ -179,7 +179,7 @@ export function SurgeryPage() {
       </header>
 
       {/* Filters */}
-      <div className="px-6 md:px-10 py-4 bg-background border-b border-border">
+      <div className="px-6 md:px-8 py-4 bg-background border-b border-border">
         <div className="flex flex-col md:flex-row gap-4">
           <Input
             type="date"
