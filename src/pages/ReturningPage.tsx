@@ -135,11 +135,11 @@ export function ReturningPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-4">
+      <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-2xl font-medium text-foreground">Returning Patients</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground">Returning Patients</h1>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground bg-background px-3 py-1 rounded-full">
+            <span className="text-sm text-muted-foreground bg-card px-3 py-1 rounded-full border border-border">
               {viewingBranch} Branch
             </span>
             <Button onClick={handleNewFollowup} size="sm">

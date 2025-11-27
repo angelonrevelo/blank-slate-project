@@ -24,10 +24,10 @@ export function Button({
 
   const variantStyles = {
     primary: 'bg-primary text-white hover:bg-primary-light focus:ring-primary',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-300',
+    secondary: 'bg-muted text-foreground hover:bg-muted/80 focus:ring-ring',
     outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white focus:ring-primary',
-    danger: 'bg-error text-white hover:bg-red-600 focus:ring-error',
-    text: 'text-primary hover:bg-gray-100 focus:ring-primary',
+    danger: 'bg-error text-white hover:bg-error/90 focus:ring-error',
+    text: 'text-primary hover:bg-muted focus:ring-primary',
   };
 
   const sizeStyles = {

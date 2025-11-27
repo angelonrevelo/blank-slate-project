@@ -84,7 +84,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       {/* Logo */}
       <div className="mb-6 animate-scale-in">
         <img
@@ -124,10 +124,10 @@ export function LoginPage() {
 
       {/* Welcome text */}
       <div className="text-center mb-5 animate-slide-up">
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">
+        <h1 className="text-xl font-semibold text-foreground mb-1">
           {isSignUp ? 'Create Account' : 'Welcome'}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           {isSignUp ? 'Sign up to get started.' : 'Please sign in to continue.'}
         </p>
       </div>
@@ -249,7 +249,7 @@ export function LoginPage() {
                 setPassword('');
                 setConfirmPassword('');
               }}
-              className="text-sm text-gray-600 hover:text-primary transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
@@ -280,7 +280,7 @@ export function LoginPage() {
           </div>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Enter your email address and we'll send you a link to reset your password.
             </p>
 
@@ -317,7 +317,7 @@ export function LoginPage() {
               </Button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-muted-foreground text-center">
               Please ask an administrator if you forgot the default password.
             </p>
           </form>

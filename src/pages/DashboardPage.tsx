@@ -258,10 +258,10 @@ export function DashboardPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
+      <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-medium text-foreground">
+            <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
               Dashboard
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -274,7 +274,7 @@ export function DashboardPage() {
             <select
               value={viewingBranch}
               onChange={(e) => setViewingBranch(e.target.value)}
-              className="px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="Quezon City">Quezon City</option>
               <option value="Tanauan City">Tanauan City</option>
@@ -284,7 +284,7 @@ export function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
+      <div className="flex-1 p-6 md:p-8 overflow-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
@@ -344,11 +344,11 @@ export function DashboardPage() {
               View All Tasks
             </Button>
           </div>
-          <div className="bg-background border border-border rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
             {assignments.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-secondary">
+                  <thead className="bg-secondary/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Patient ID</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Name</th>
@@ -400,11 +400,11 @@ export function DashboardPage() {
               View Surgery Schedule
             </Button>
           </div>
-          <div className="bg-background border border-border rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
             {surgeries.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-secondary">
+                  <thead className="bg-secondary/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Time</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Patient ID</th>

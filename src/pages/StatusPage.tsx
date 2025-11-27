@@ -114,17 +114,17 @@ export function StatusPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
-        <h1 className="text-3xl md:text-4xl font-medium text-gray-900">
+      <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
+        <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
           Clinic Status
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Real-time overview of clinic operations
         </p>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
+      <div className="flex-1 p-6 md:p-8 overflow-auto">
         {/* Patient Queue Status */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Patient Queue by Department</h2>
@@ -160,34 +160,34 @@ export function StatusPage() {
         {/* Today's Surgery Schedule */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Surgery Schedule</h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
             {todaySurgeries.length > 0 ? (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-secondary/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Procedure</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase">Patient</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase">Procedure</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase">Status</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {todaySurgeries.map(surgery => (
                     <tr key={surgery.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {surgery.scheduled_time}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                         {surgery.patient_name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {surgery.procedure}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          surgery.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                          surgery.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-700'
+                          surgery.status === 'Completed' ? 'bg-success/10 text-success border border-success/20' :
+                          surgery.status === 'In Progress' ? 'bg-primary/10 text-primary border border-primary/20' :
+                          'bg-secondary text-foreground border border-border'
                         }`}>
                           {surgery.status}
                         </span>
@@ -197,7 +197,7 @@ export function StatusPage() {
                 </tbody>
               </table>
             ) : (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-muted-foreground">
                 No surgeries scheduled for today
               </div>
             )}
@@ -224,8 +224,8 @@ function QueueCard({ title, count, color }: QueueCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
+    <div className="bg-card border border-border rounded-xl shadow-sm p-6">
+      <h3 className="text-sm font-medium text-muted-foreground mb-2">{title}</h3>
       <p className={`text-3xl font-bold ${colorClasses[color]}`}>{count}</p>
     </div>
   );

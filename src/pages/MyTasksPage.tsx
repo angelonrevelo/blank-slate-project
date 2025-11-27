@@ -120,21 +120,21 @@ export function MyTasksPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
+      <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-3xl md:text-4xl font-medium text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
             My Tasks
           </h1>
           
           <div className="flex items-center gap-3">
             {/* View Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <div className="flex bg-muted rounded-lg p-1">
               <button
                 onClick={() => setViewSetting('ViewMyTasks')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   viewSetting === 'ViewMyTasks'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 VIEW MY TASKS
@@ -143,8 +143,8 @@ export function MyTasksPage() {
                 onClick={() => setViewSetting('ViewAll')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   viewSetting === 'ViewAll'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 VIEW ALL
@@ -167,7 +167,7 @@ export function MyTasksPage() {
       </header>
 
       {/* Main Content - Kanban Board */}
-      <div className="flex-1 p-6 md:px-10 overflow-auto">
+      <div className="flex-1 p-6 md:p-8 overflow-auto">
         <KanbanBoard
           columns={columns}
           items={kanbanItems}
