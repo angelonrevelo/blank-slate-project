@@ -227,7 +227,7 @@ export function PatientsPage() {
                   <TableRow 
                     key={patient.id}
                     className="cursor-pointer"
-                    onClick={() => navigate(`/patients/${patient.id}`)}
+                    onClick={() => navigate(`/information?patientId=${patient.id}`)}
                   >
                     <TableCell className="font-medium">{patient.patient_id}</TableCell>
                     <TableCell>{patient.name}</TableCell>
@@ -244,7 +244,7 @@ export function PatientsPage() {
                         className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-dark transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/patients/${patient.id}`);
+                          navigate(`/information?patientId=${patient.id}`);
                         }}
                       >
                         <Eye className="h-4 w-4" />
