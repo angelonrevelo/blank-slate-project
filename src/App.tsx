@@ -13,6 +13,7 @@ import {
   ReturningPage,
   SchedulingPage,
   SurgeryPage,
+  SettingsPage,
 } from '@/pages';
 import StatusPage from '@/pages/StatusPage';
 
@@ -43,6 +44,7 @@ function App() {
               <Route path="/status" element={<StatusPage />} />
               <Route path="/scheduling" element={<SchedulingPage />} />
               <Route path="/surgery" element={<SurgeryPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             {/* Redirect root to loading */}

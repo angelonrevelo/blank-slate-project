@@ -1,4 +1,4 @@
-import { Search, Bell, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Search, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
 
 export function Header() {
   const navigate = useNavigate();
@@ -42,11 +43,7 @@ export function Header() {
 
       {/* Right Section */}
       <div className="flex items-center gap-4">
-        {/* Notifications */}
-        <button className="relative p-2 hover:bg-secondary rounded-lg transition-colors">
-          <Bell className="h-5 w-5 text-foreground" />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-error rounded-full"></span>
-        </button>
+        <NotificationDropdown />
 
         {/* User Menu */}
         <DropdownMenu>
@@ -67,7 +64,7 @@ export function Header() {
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
