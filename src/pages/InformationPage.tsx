@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Switch, EyeSelector, FileUpload, Modal, SignaturePad } from '@/components/ui';
+import { Button, Input, Switch, EyeSelector, FileUpload, Modal, ImagePainter, WebCameraCapture, IOLSelectionTable, Checkbox } from '@/components/ui';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type InfoTabType = 'InfoHistory' | 'VisualAcuity' | 'AnteriorSegment' | 'SlitLamp' | 'Fundus' | 'Diagnosis' | 'Biometry' | 'Clearance';
+type InfoTabType = 'InfoHistory' | 'VisualAcuity' | 'AnteriorSegment' | 'SlitLamp' | 'Fundus' | 'Diagnosis' | 'Biometry' | 'Clearance' | 'TreatmentPlan';
 
 interface PatientData {
   id: string;
@@ -53,36 +53,54 @@ export function InformationPage() {
     previous_surgery_os: false,
   });
 
-  // Chief Complaints checkboxes
+  // ID Photo state
+  const [idPhoto, setIdPhoto] = useState<string>('');
+  const [showCameraModal, setShowCameraModal] = useState(false);
+
+  // Chief Complaints checkboxes with notes
   const [chiefComplaints, setChiefComplaints] = useState({
-    blurredVision: false,
-    eyePain: false,
+    blurred: false,
     cloudy: false,
-    itchy: false,
     floaters: false,
-    redness: false,
     teary: false,
     headache: false,
+    eyepain: false,
+    itchy: false,
+    redness: false,
     others: false,
+    otherNotes: '',
   });
 
-  // Ocular History checkboxes
+  // Ocular History checkboxes with notes
   const [ocularHistory, setOcularHistory] = useState({
     trauma: false,
+    traumaNotes: '',
     glaucoma: false,
+    glaucomaNotes: '',
     retinopathy: false,
+    retinopathyNotes: '',
     cataract: false,
+    cataractNotes: '',
     others: false,
+    otherNotes: '',
   });
 
-  // Past Medical History checkboxes
+  // Past Medical History checkboxes with notes for each
   const [pastMedicalHistory, setPastMedicalHistory] = useState({
     diabetes: false,
+    diabetesNotes: '',
     hpn: false,
-    heartProblem: false,
-    bloodThinner: false,
+    hpnNotes: '',
+    heartproblem: false,
+    heartproblemNotes: '',
+    bloodthinner: false,
+    bloodthinnerNotes: '',
     others: false,
+    otherNotes: '',
   });
+
+  // Medications field
+  const [medications, setMedications] = useState('');
 
   // Visual Acuity state
   const [visualAcuity, setVisualAcuity] = useState({
@@ -96,22 +114,37 @@ export function InformationPage() {
     distOs: '', distOsBc: '', distOsPh: '', distOsK1: '', distOsK2: '', distOsAxl: '',
   });
 
-  // Anterior Segment state
+  // Anterior Segment state (using ImagePainter)
   const [anteriorSegment, setAnteriorSegment] = useState({
-    odDrawing: '',
-    osDrawing: '',
+    odDrawingPng: '',
+    odDrawingJson: '',
+    osDrawingPng: '',
+    osDrawingJson: '',
+    options: {
+      eyesa: false,
+      eyesb: false,
+      eyesc: false,
+    },
   });
 
-  // Slit Lamp state
+  // Slit Lamp state (using ImagePainter)
   const [slitLamp, setSlitLamp] = useState({
-    od: '',
-    os: '',
+    odDrawingPng: '',
+    odDrawingJson: '',
+    osDrawingPng: '',
+    osDrawingJson: '',
+    odFindings: '',
+    osFindings: '',
   });
 
-  // Fundus state
+  // Fundus state (using ImagePainter)
   const [fundus, setFundus] = useState({
-    od: '',
-    os: '',
+    odDrawingPng: '',
+    odDrawingJson: '',
+    osDrawingPng: '',
+    osDrawingJson: '',
+    odFindings: '',
+    osFindings: '',
     cupDiscRatioOd: '',
     cupDiscRatioOs: '',
   });
@@ -139,7 +172,7 @@ export function InformationPage() {
     otherLaterality: '' as 'OD' | 'OS' | 'OU' | '',
   });
 
-  // Biometry state
+  // Biometry state with IOL calculation
   const [biometry, setBiometry] = useState({
     odK1: '',
     odK2: '',
@@ -149,7 +182,19 @@ export function InformationPage() {
     osK2: '',
     osAl: '',
     osAcd: '',
+    // IOL calculation fields
+    targetDiopterOd: '',
+    targetDiopterOs: '',
+    selectedK1Od: '',
+    selectedK2Od: '',
+    selectedAlOd: '',
+    selectedK1Os: '',
+    selectedK2Os: '',
+    selectedAlOs: '',
   });
+
+  // IOL Selection Table state
+  const [iolPowers, setIolPowers] = useState({});
 
   // Surgery scheduling state
   const [surgerySchedule, setSurgerySchedule] = useState({
@@ -161,6 +206,27 @@ export function InformationPage() {
     notes: '',
   });
 
+  // Treatment Plan state (new tab)
+  const [treatmentPlan, setTreatmentPlan] = useState({
+    forbiometry: false,
+    forbiometryNotes: '',
+    forva: false,
+    forvaNotes: '',
+    forsurgery: false,
+    forsurgeryNotes: '',
+    forsurgeryEye: '' as 'OD' | 'OS' | 'OU' | '',
+    postponesurgery: false,
+    postponesurgeryDate: '',
+    postponesurgeryNotes: '',
+    requiresclearance: false,
+    requiresclearanceNotes: '',
+    torefer: false,
+    toreferDoctor: '',
+    toreferNotes: '',
+    graduated: false,
+    graduatedNotes: '',
+  });
+
   const tabs = [
     { id: 'InfoHistory' as InfoTabType, label: 'INFO & HISTORY' },
     { id: 'VisualAcuity' as InfoTabType, label: 'VISUAL ACUITY' },
@@ -170,6 +236,7 @@ export function InformationPage() {
     { id: 'Diagnosis' as InfoTabType, label: 'DIAGNOSIS' },
     { id: 'Biometry' as InfoTabType, label: 'BIOMETRY' },
     { id: 'Clearance' as InfoTabType, label: 'CLEARANCE' },
+    { id: 'TreatmentPlan' as InfoTabType, label: 'TREATMENT PLAN' },
   ];
 
   const handleTabChange = (tab: InfoTabType) => {
