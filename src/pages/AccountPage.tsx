@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, Input, Modal, SignaturePad } from '@/components/ui';
 
 export function AccountPage() {
   const { signOut, changePassword } = useAuth();
@@ -277,25 +277,14 @@ export function AccountPage() {
         title="Update Signature"
         size="md"
       >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Signature upload functionality will be implemented with Supabase storage integration.
-          </p>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <p className="text-gray-500">Click to upload or drag and drop</p>
-            <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={() => setShowSignatureModal(false)}
-            fullWidth
-          >
-            Close
-          </Button>
-        </div>
+        <SignaturePad
+          onSave={(dataUrl) => {
+            console.log('Signature saved:', dataUrl);
+            setShowSignatureModal(false);
+          }}
+          onClear={() => console.log('Signature cleared')}
+          initialSignature={userSignature}
+        />
       </Modal>
 
       {/* Logout Confirmation Modal */}
