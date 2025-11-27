@@ -1,362 +1,445 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal, LoadingSpinner } from '@/components/ui';
+import { Button, Input, LoadingSpinner } from '@/components/ui';
+import { PatientDataSheet } from '@/components/PatientDataSheet';
+import { CalendarDayPicker } from '@/components/ui/CalendarDayPicker';
+import { IOLSelectionTable } from '@/components/ui/IOLSelectionTable';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-type Schedule = {
-  id: string;
-  patient: string;
-  procedure: string;
-  date: string;
-  time: string;
-  status: string;
-};
+import type { Patient } from '@/types';
 
 export function SchedulingPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { viewingBranch } = useAppState();
   const { toast } = useToast();
   
-  const routeState = location.state as { visitID?: string } | null;
-  
-  const [selectedDate, setSelectedDate] = useState('');
-  const [showNewScheduleModal, setShowNewScheduleModal] = useState(false);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [patients, setPatients] = useState<Array<{ id: string; name: string }>>([]);
-  
-  // New schedule form state
-  const [scheduleForm, setScheduleForm] = useState({
-    patientId: '',
-    procedureType: '',
-    scheduledDate: '',
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientEyeExam, setPatientEyeExam] = useState<any>(null);
+  const [patientDiagnosis, setPatientDiagnosis] = useState<any>(null);
+  const [surgeons, setSurgeons] = useState<any[]>([]);
+  const [scheduledSurgeries, setScheduledSurgeries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [surgeryForm, setSurgeryForm] = useState({
+    procedure: '',
+    eye: '',
+    surgeonId: '',
+    scheduledDate: new Date(),
     scheduledTime: '',
-    notes: '',
+    clearanceFile: '',
   });
 
+  const [iolPowers, setIolPowers] = useState<any>({});
+
   useEffect(() => {
-    fetchSchedules();
     fetchPatients();
-  }, [viewingBranch, selectedDate]);
+    fetchSurgeons();
+  }, [viewingBranch]);
+
+  useEffect(() => {
+    if (surgeryForm.scheduledDate) {
+      fetchScheduledSurgeries();
+    }
+  }, [surgeryForm.scheduledDate, viewingBranch]);
 
   const fetchPatients = async () => {
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select('id, firstname, lastname')
+        .select('*')
         .eq('branch', viewingBranch)
-        .eq('status', 'Active');
+        .eq('status', 'Active')
+        .order('lastname', { ascending: true });
 
       if (error) throw error;
-
-      setPatients((data || []).map(p => ({
-        id: p.id,
-        name: `${p.firstname} ${p.lastname}`,
-      })));
+      setPatients((data || []) as Patient[]);
     } catch (error) {
       console.error('Error fetching patients:', error);
     }
   };
 
-  const fetchSchedules = async () => {
-    setLoading(true);
+  const fetchSurgeons = async () => {
     try {
-      let query = supabase
-        .from('schedules')
-        .select(`
-          id,
-          procedure_type,
-          scheduled_date,
-          scheduled_time,
-          status,
-          patient:patients(firstname, lastname)
-        `)
-        .eq('branch', viewingBranch)
-        .order('scheduled_date', { ascending: true });
-
-      if (selectedDate) {
-        query = query.eq('scheduled_date', selectedDate);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname')
+        .eq('title', 'Doctor')
+        .eq('branch', viewingBranch);
 
       if (error) throw error;
-
-      const formattedSchedules: Schedule[] = (data || []).map((s: any) => ({
-        id: s.id,
-        patient: `${s.patient.firstname} ${s.patient.lastname}`,
-        procedure: s.procedure_type,
-        date: new Date(s.scheduled_date).toLocaleDateString(),
-        time: s.scheduled_time,
-        status: s.status,
-      }));
-
-      setSchedules(formattedSchedules);
+      setSurgeons(data || []);
     } catch (error) {
-      console.error('Error fetching schedules:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching surgeons:', error);
     }
   };
 
-  const handleCreateSchedule = async () => {
-    if (!scheduleForm.patientId || !scheduleForm.procedureType || !scheduleForm.scheduledDate || !scheduleForm.scheduledTime) {
+  const fetchScheduledSurgeries = async () => {
+    try {
+      const dateStr = surgeryForm.scheduledDate.toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('surgeries')
+        .select(`
+          id,
+          scheduled_time,
+          procedure,
+          patient:patients(firstname, lastname),
+          surgeon:profiles!surgeries_surgeon_id_fkey(firstname, lastname)
+        `)
+        .eq('branch', viewingBranch)
+        .eq('scheduled_date', dateStr)
+        .order('scheduled_time', { ascending: true });
+
+      if (error) throw error;
+      setScheduledSurgeries(data || []);
+    } catch (error) {
+      console.error('Error fetching scheduled surgeries:', error);
+    }
+  };
+
+  const handlePatientSelect = async (patientId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    setSelectedPatient(patient || null);
+
+    if (patient) {
+      // Fetch eye exam data
+      const { data: examData } = await supabase
+        .from('eye_examinations')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('examination_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      setPatientEyeExam(examData);
+
+      // Fetch diagnosis
+      const { data: diagnosisData } = await supabase
+        .from('diagnoses')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      setPatientDiagnosis(diagnosisData);
+    }
+  };
+
+  const handleScheduleSurgery = async () => {
+    if (!selectedPatient || !surgeryForm.procedure || !surgeryForm.eye || !surgeryForm.surgeonId || !surgeryForm.scheduledTime) {
       toast({
         title: 'Missing Fields',
-        description: 'Please fill in all required fields',
+        description: 'Please complete all required fields',
         variant: 'destructive',
       });
       return;
     }
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+    // For cataract surgeries, require IOL selection
+    if (surgeryForm.procedure === 'Cataract/Phacoemulsification' && !iolPowers.OD_A1 && !iolPowers.OS_A1) {
+      toast({
+        title: 'IOL Selection Required',
+        description: 'Please select IOL powers for cataract surgery',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-      const { error } = await supabase.from('schedules').insert({
-        patient_id: scheduleForm.patientId,
-        procedure_type: scheduleForm.procedureType,
-        scheduled_date: scheduleForm.scheduledDate,
-        scheduled_time: scheduleForm.scheduledTime,
-        notes: scheduleForm.notes || null,
+    setLoading(true);
+    try {
+      const dateStr = surgeryForm.scheduledDate.toISOString().split('T')[0];
+
+      // Create surgery record
+      const { error: surgeryError } = await supabase.from('surgeries').insert({
+        patient_id: selectedPatient.id,
+        procedure: surgeryForm.procedure,
+        eye_operated: surgeryForm.eye as any,
+        surgeon_id: surgeryForm.surgeonId,
+        scheduled_date: dateStr,
+        scheduled_time: surgeryForm.scheduledTime,
         branch: viewingBranch,
-        created_by: user.id,
+        stage: 'scheduled',
+        status: 'Scheduled',
       });
 
-      if (error) throw error;
+      if (surgeryError) throw surgeryError;
+
+      // Update patient biometry with IOL powers
+      if (Object.keys(iolPowers).length > 0) {
+        const biometryUpdate: any = {};
+        if (surgeryForm.eye === 'OD' || surgeryForm.eye === 'OU') {
+          biometryUpdate.biometry_od = { iol_powers: iolPowers };
+        }
+        if (surgeryForm.eye === 'OS' || surgeryForm.eye === 'OU') {
+          biometryUpdate.biometry_os = { iol_powers: iolPowers };
+        }
+
+        await supabase
+          .from('patients')
+          .update(biometryUpdate)
+          .eq('id', selectedPatient.id);
+      }
+
+      // Update patient surgery dates
+      const surgeryDateUpdate: any = { surgery_eye: surgeryForm.eye };
+      if (surgeryForm.eye === 'OD' || surgeryForm.eye === 'OU') {
+        surgeryDateUpdate.surgerydate_od = dateStr;
+      }
+      if (surgeryForm.eye === 'OS' || surgeryForm.eye === 'OU') {
+        surgeryDateUpdate.surgerydate_os = dateStr;
+      }
+
+      await supabase
+        .from('patients')
+        .update(surgeryDateUpdate)
+        .eq('id', selectedPatient.id);
 
       toast({
         title: 'Success',
-        description: 'Schedule created successfully',
+        description: 'Surgery scheduled successfully',
       });
 
-      setShowNewScheduleModal(false);
-      setScheduleForm({
-        patientId: '',
-        procedureType: '',
-        scheduledDate: '',
+      // Reset form
+      setSurgeryForm({
+        procedure: '',
+        eye: '',
+        surgeonId: '',
+        scheduledDate: new Date(),
         scheduledTime: '',
-        notes: '',
+        clearanceFile: '',
       });
-      fetchSchedules();
+      setIolPowers({});
+      setSelectedPatient(null);
+      fetchScheduledSurgeries();
     } catch (error) {
-      console.error('Error creating schedule:', error);
+      console.error('Error scheduling surgery:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create schedule',
+        description: 'Failed to schedule surgery',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const procedureTypes = [
-    'Consultation',
-    'Cataract Surgery',
+    'Cataract/Phacoemulsification',
     'LASIK',
-    'Glaucoma Treatment',
-    'Retinal Examination',
+    'Pterygium Surgery',
+    'Glaucoma Surgery',
+    'Retinal Surgery',
     'Other',
   ];
+
+  const surgeryDates = scheduledSurgeries.map(s => new Date(s.scheduled_date));
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-medium text-gray-900">
-              Scheduling
-            </h1>
-            {routeState?.visitID && (
-              <p className="text-sm text-gray-500 mt-1">
-                Visit ID: {routeState.visitID}
-              </p>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-              {viewingBranch} Branch
-            </span>
-            
-            <Button
-              onClick={() => setShowNewScheduleModal(true)}
-              icon={
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
-              }
-            >
-              New Schedule
-            </Button>
-          </div>
+      <header className="bg-secondary px-6 md:px-10 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-medium text-foreground">Surgery Scheduling</h1>
+          <span className="text-sm text-muted-foreground bg-background px-3 py-1 rounded-full">
+            {viewingBranch} Branch
+          </span>
         </div>
       </header>
 
-      {/* Date Filter */}
-      <div className="px-6 md:px-10 py-4 bg-white border-b">
-        <div className="flex items-center gap-4">
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-48"
-          />
-          <Button variant="outline" onClick={() => setSelectedDate('')}>
-            Clear
-          </Button>
-        </div>
-      </div>
-
-      {/* Schedule Grid */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="lg" />
+      {/* Split Panel Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Patient Selection & Data Sheet */}
+        <div className="w-2/5 border-r border-border p-6 overflow-auto">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Select Patient *
+            </label>
+            <select
+              value={selectedPatient?.id || ''}
+              onChange={(e) => handlePatientSelect(e.target.value)}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Choose a patient...</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.lastname}, {patient.firstname} ({patient.patient_id})
+                </option>
+              ))}
+            </select>
           </div>
-        ) : schedules.length > 0 ? (
-          <div className="grid gap-4">
-            {schedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/information`, { state: { visitID: schedule.id } })}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{schedule.patient}</h3>
-                    <p className="text-sm text-gray-500">{schedule.procedure}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{schedule.date}</span>
-                      <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{schedule.time}</span>
-                    </div>
+
+          {selectedPatient && (
+            <PatientDataSheet
+              patient={selectedPatient}
+              eyeExam={patientEyeExam}
+              diagnosis={patientDiagnosis}
+            />
+          )}
+        </div>
+
+        {/* Right Panel - Surgery Scheduling Form */}
+        <div className="flex-1 p-6 overflow-auto">
+          {selectedPatient ? (
+            <div className="space-y-6">
+              {/* Procedure & Eye Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Procedure Type *
+                  </label>
+                  <select
+                    value={surgeryForm.procedure}
+                    onChange={(e) => setSurgeryForm({ ...surgeryForm, procedure: e.target.value })}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select procedure</option>
+                    {procedureTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Eye to Operate *
+                  </label>
+                  <div className="flex gap-2">
+                    {['OD', 'OS', 'OU'].map((eye) => (
+                      <button
+                        key={eye}
+                        onClick={() => setSurgeryForm({ ...surgeryForm, eye })}
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          surgeryForm.eye === eye
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                        }`}
+                      >
+                        {eye}
+                      </button>
+                    ))}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    schedule.status === 'Scheduled'
-                      ? 'bg-blue-100 text-blue-800'
-                      : schedule.status === 'Completed'
-                      ? 'bg-green-100 text-green-800'
-                      : schedule.status === 'Cancelled'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {schedule.status}
-                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <svg className="w-16 h-16 text-gray-300 mb-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Schedules</h3>
-            <p className="text-gray-500">
-              {selectedDate 
-                ? 'No appointments scheduled for this date'
-                : 'Get started by creating your first schedule'
-              }
-            </p>
-            <Button className="mt-4" onClick={() => setShowNewScheduleModal(true)}>
-              Schedule Appointment
-            </Button>
-          </div>
-        )}
-      </div>
 
-      {/* New Schedule Modal */}
-      <Modal
-        isOpen={showNewScheduleModal}
-        onClose={() => setShowNewScheduleModal(false)}
-        title="New Schedule"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Patient *
-            </label>
-            <select
-              value={scheduleForm.patientId}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, patientId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Select patient</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>{patient.name}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Procedure Type *
-            </label>
-            <select
-              value={scheduleForm.procedureType}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, procedureType: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Select procedure</option>
-              {procedureTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-          
-          <Input
-            type="date"
-            label="Scheduled Date *"
-            value={scheduleForm.scheduledDate}
-            onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledDate: e.target.value })}
-            fullWidth
-          />
+              {/* Surgeon & Date/Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Surgeon *
+                  </label>
+                  <select
+                    value={surgeryForm.surgeonId}
+                    onChange={(e) => setSurgeryForm({ ...surgeryForm, surgeonId: e.target.value })}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select surgeon</option>
+                    {surgeons.map((surgeon) => (
+                      <option key={surgeon.id} value={surgeon.id}>
+                        Dr. {surgeon.firstname} {surgeon.lastname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <Input
-            type="time"
-            label="Scheduled Time *"
-            value={scheduleForm.scheduledTime}
-            onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledTime: e.target.value })}
-            fullWidth
-          />
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              value={scheduleForm.notes}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
-              placeholder="Additional notes..."
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Time *
+                  </label>
+                  <Input
+                    type="time"
+                    value={surgeryForm.scheduledTime}
+                    onChange={(e) => setSurgeryForm({ ...surgeryForm, scheduledTime: e.target.value })}
+                  />
+                </div>
+              </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="secondary"
-              onClick={() => setShowNewScheduleModal(false)}
-              fullWidth
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateSchedule} fullWidth>
-              Create Schedule
-            </Button>
-          </div>
+              {/* Calendar */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Select Surgery Date *
+                </label>
+                <CalendarDayPicker
+                  selectedDate={surgeryForm.scheduledDate}
+                  onDateSelect={(date) => setSurgeryForm({ ...surgeryForm, scheduledDate: date })}
+                  surgeryDates={surgeryDates}
+                />
+              </div>
+
+              {/* IOL Selection (for cataract surgeries) */}
+              {surgeryForm.procedure === 'Cataract/Phacoemulsification' && (
+                <div>
+                  <IOLSelectionTable
+                    initialValues={iolPowers}
+                    onChange={setIolPowers}
+                  />
+                </div>
+              )}
+
+              {/* Clearance Section */}
+              <div className="bg-secondary/50 border border-border rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-2">Clearance Documents</h3>
+                <div className="flex gap-2 text-sm text-muted-foreground">
+                  <span>OD Clearance:</span>
+                  <span className="text-foreground">{(selectedPatient as any).clearance_fileod || 'Not uploaded'}</span>
+                </div>
+                <div className="flex gap-2 text-sm text-muted-foreground mt-1">
+                  <span>OS Clearance:</span>
+                  <span className="text-foreground">{(selectedPatient as any).clearance_fileos || 'Not uploaded'}</span>
+                </div>
+              </div>
+
+              {/* Other Scheduled Surgeries */}
+              {scheduledSurgeries.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">
+                    Other Surgeries on {surgeryForm.scheduledDate.toLocaleDateString()}
+                  </h3>
+                  <div className="space-y-2">
+                    {scheduledSurgeries.map((surgery) => (
+                      <div key={surgery.id} className="bg-secondary/30 border border-border rounded-lg p-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {surgery.patient.firstname} {surgery.patient.lastname}
+                            </p>
+                            <p className="text-muted-foreground">{surgery.procedure}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-foreground">{surgery.scheduled_time}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {surgery.surgeon ? `Dr. ${surgery.surgeon.firstname} ${surgery.surgeon.lastname}` : 'No surgeon'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Button */}
+              <Button
+                onClick={handleScheduleSurgery}
+                disabled={loading}
+                fullWidth
+                size="lg"
+              >
+                {loading ? <LoadingSpinner size="sm" /> : 'Schedule Surgery'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <svg className="w-16 h-16 text-muted mb-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+              <h3 className="text-lg font-medium text-foreground mb-2">Select a Patient</h3>
+              <p className="text-muted-foreground">
+                Choose a patient from the dropdown to begin scheduling surgery
+              </p>
+            </div>
+          )}
         </div>
-      </Modal>
+      </div>
     </div>
   );
 }

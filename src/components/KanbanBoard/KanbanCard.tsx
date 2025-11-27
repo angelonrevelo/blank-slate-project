@@ -5,6 +5,12 @@ interface KanbanCardProps {
   waitTime?: string;
   status?: string;
   onClick?: () => void;
+  metadata?: {
+    procedure?: string;
+    eye?: string;
+    scheduledTime?: string;
+    iolPower?: string;
+  };
 }
 
 export function KanbanCard({
@@ -13,7 +19,8 @@ export function KanbanCard({
   assignedTo,
   waitTime,
   status,
-  onClick
+  onClick,
+  metadata
 }: KanbanCardProps) {
   return (
     <div
@@ -53,6 +60,30 @@ export function KanbanCard({
               <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
             </svg>
             <span>{waitTime}</span>
+          </div>
+        )}
+
+        {/* Surgery-specific metadata */}
+        {metadata && (
+          <div className="pt-2 mt-2 border-t border-gray-200 space-y-1">
+            {metadata.eye && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-gray-500">Eye:</span>
+                <span className="font-medium text-gray-700">{metadata.eye}</span>
+              </div>
+            )}
+            {metadata.scheduledTime && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-gray-500">Time:</span>
+                <span className="font-medium text-gray-700">{metadata.scheduledTime}</span>
+              </div>
+            )}
+            {metadata.iolPower && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-gray-500">IOL:</span>
+                <span className="font-medium text-gray-700">{metadata.iolPower}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
