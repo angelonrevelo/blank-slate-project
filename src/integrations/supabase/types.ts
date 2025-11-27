@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          code: string
+          contact_number: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          operating_hours: Json | null
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          contact_number?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          operating_hours?: Json | null
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          contact_number?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          operating_hours?: Json | null
+        }
+        Relationships: []
+      }
       clearances: {
         Row: {
           clearance_type: string
@@ -52,6 +88,122 @@ export type Database = {
           },
           {
             foreignKeyName: "clearances_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnoses: {
+        Row: {
+          branch: string
+          cataract: boolean | null
+          cataract_laterality:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          cataract_type: Database["public"]["Enums"]["cataract_type"] | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          intake_id: string | null
+          other_diagnosis: string | null
+          other_laterality: Database["public"]["Enums"]["eye_laterality"] | null
+          patient_id: string
+          pseudophakia: boolean | null
+          pseudophakia_iol_details: string | null
+          pseudophakia_laterality:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          pterygium: boolean | null
+          pterygium_laterality:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_error: boolean | null
+          refraction_laterality:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_notes: string | null
+        }
+        Insert: {
+          branch: string
+          cataract?: boolean | null
+          cataract_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          cataract_type?: Database["public"]["Enums"]["cataract_type"] | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          intake_id?: string | null
+          other_diagnosis?: string | null
+          other_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          patient_id: string
+          pseudophakia?: boolean | null
+          pseudophakia_iol_details?: string | null
+          pseudophakia_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          pterygium?: boolean | null
+          pterygium_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_error?: boolean | null
+          refraction_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_notes?: string | null
+        }
+        Update: {
+          branch?: string
+          cataract?: boolean | null
+          cataract_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          cataract_type?: Database["public"]["Enums"]["cataract_type"] | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          intake_id?: string | null
+          other_diagnosis?: string | null
+          other_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          patient_id?: string
+          pseudophakia?: boolean | null
+          pseudophakia_iol_details?: string | null
+          pseudophakia_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          pterygium?: boolean | null
+          pterygium_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_error?: boolean | null
+          refraction_laterality?:
+            | Database["public"]["Enums"]["eye_laterality"]
+            | null
+          refraction_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnoses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diagnoses_intake_id_fkey"
+            columns: ["intake_id"]
+            isOneToOne: false
+            referencedRelation: "intakes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diagnoses_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -104,6 +256,110 @@ export type Database = {
           },
         ]
       }
+      eye_examinations: {
+        Row: {
+          anterior_segment_od_drawing: string | null
+          anterior_segment_os_drawing: string | null
+          biometry_od_acd: number | null
+          biometry_od_al: number | null
+          biometry_od_k1: number | null
+          biometry_od_k2: number | null
+          biometry_os_acd: number | null
+          biometry_os_al: number | null
+          biometry_os_k1: number | null
+          biometry_os_k2: number | null
+          branch: string
+          created_at: string | null
+          drawn_by: string | null
+          examination_date: string | null
+          id: string
+          intake_id: string | null
+          patient_id: string
+          requested_by: string | null
+          va_od: string | null
+          va_od_corrected: string | null
+          va_os: string | null
+          va_os_corrected: string | null
+        }
+        Insert: {
+          anterior_segment_od_drawing?: string | null
+          anterior_segment_os_drawing?: string | null
+          biometry_od_acd?: number | null
+          biometry_od_al?: number | null
+          biometry_od_k1?: number | null
+          biometry_od_k2?: number | null
+          biometry_os_acd?: number | null
+          biometry_os_al?: number | null
+          biometry_os_k1?: number | null
+          biometry_os_k2?: number | null
+          branch: string
+          created_at?: string | null
+          drawn_by?: string | null
+          examination_date?: string | null
+          id?: string
+          intake_id?: string | null
+          patient_id: string
+          requested_by?: string | null
+          va_od?: string | null
+          va_od_corrected?: string | null
+          va_os?: string | null
+          va_os_corrected?: string | null
+        }
+        Update: {
+          anterior_segment_od_drawing?: string | null
+          anterior_segment_os_drawing?: string | null
+          biometry_od_acd?: number | null
+          biometry_od_al?: number | null
+          biometry_od_k1?: number | null
+          biometry_od_k2?: number | null
+          biometry_os_acd?: number | null
+          biometry_os_al?: number | null
+          biometry_os_k1?: number | null
+          biometry_os_k2?: number | null
+          branch?: string
+          created_at?: string | null
+          drawn_by?: string | null
+          examination_date?: string | null
+          id?: string
+          intake_id?: string | null
+          patient_id?: string
+          requested_by?: string | null
+          va_od?: string | null
+          va_od_corrected?: string | null
+          va_os?: string | null
+          va_os_corrected?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eye_examinations_drawn_by_fkey"
+            columns: ["drawn_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eye_examinations_intake_id_fkey"
+            columns: ["intake_id"]
+            isOneToOne: false
+            referencedRelation: "intakes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eye_examinations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eye_examinations_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       followups: {
         Row: {
           branch: string
@@ -114,6 +370,9 @@ export type Database = {
           notes: string | null
           patient_id: string
           status: Database["public"]["Enums"]["followup_status"] | null
+          workflow_status:
+            | Database["public"]["Enums"]["followup_workflow_type"]
+            | null
         }
         Insert: {
           branch: string
@@ -124,6 +383,9 @@ export type Database = {
           notes?: string | null
           patient_id: string
           status?: Database["public"]["Enums"]["followup_status"] | null
+          workflow_status?:
+            | Database["public"]["Enums"]["followup_workflow_type"]
+            | null
         }
         Update: {
           branch?: string
@@ -134,6 +396,9 @@ export type Database = {
           notes?: string | null
           patient_id?: string
           status?: Database["public"]["Enums"]["followup_status"] | null
+          workflow_status?:
+            | Database["public"]["Enums"]["followup_workflow_type"]
+            | null
         }
         Relationships: [
           {
@@ -158,12 +423,16 @@ export type Database = {
           assigned_to: string | null
           branch: string
           chief_complaint: string | null
+          chief_complaints: Json | null
           created_at: string | null
           history: string | null
           id: string
           medications: string | null
+          ocular_history: Json | null
+          past_medical_history: Json | null
           patient_id: string
           status: Database["public"]["Enums"]["intake_status"] | null
+          task_type: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date: string | null
         }
         Insert: {
@@ -171,12 +440,16 @@ export type Database = {
           assigned_to?: string | null
           branch: string
           chief_complaint?: string | null
+          chief_complaints?: Json | null
           created_at?: string | null
           history?: string | null
           id?: string
           medications?: string | null
+          ocular_history?: Json | null
+          past_medical_history?: Json | null
           patient_id: string
           status?: Database["public"]["Enums"]["intake_status"] | null
+          task_type?: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date?: string | null
         }
         Update: {
@@ -184,12 +457,16 @@ export type Database = {
           assigned_to?: string | null
           branch?: string
           chief_complaint?: string | null
+          chief_complaints?: Json | null
           created_at?: string | null
           history?: string | null
           id?: string
           medications?: string | null
+          ocular_history?: Json | null
+          past_medical_history?: Json | null
           patient_id?: string
           status?: Database["public"]["Enums"]["intake_status"] | null
+          task_type?: Database["public"]["Enums"]["intake_task_type"] | null
           visit_date?: string | null
         }
         Relationships: [
@@ -214,6 +491,7 @@ export type Database = {
           address: string | null
           birthdate: string
           branch: string
+          civil_status: Database["public"]["Enums"]["civil_status_type"] | null
           contact_number: string | null
           created_at: string | null
           created_by: string | null
@@ -223,12 +501,25 @@ export type Database = {
           lastname: string
           middlename: string | null
           patient_id: string
+          patient_photo_url: string | null
+          philhealth_category:
+            | Database["public"]["Enums"]["philhealth_category_type"]
+            | null
+          philhealth_member: boolean | null
+          philhealth_no: string | null
+          previous_surgery_notes: string | null
+          previous_surgery_od: boolean | null
+          previous_surgery_od_date: string | null
+          previous_surgery_os: boolean | null
+          previous_surgery_os_date: string | null
+          referred_by: string | null
           status: Database["public"]["Enums"]["patient_status"] | null
         }
         Insert: {
           address?: string | null
           birthdate: string
           branch: string
+          civil_status?: Database["public"]["Enums"]["civil_status_type"] | null
           contact_number?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -238,12 +529,25 @@ export type Database = {
           lastname: string
           middlename?: string | null
           patient_id: string
+          patient_photo_url?: string | null
+          philhealth_category?:
+            | Database["public"]["Enums"]["philhealth_category_type"]
+            | null
+          philhealth_member?: boolean | null
+          philhealth_no?: string | null
+          previous_surgery_notes?: string | null
+          previous_surgery_od?: boolean | null
+          previous_surgery_od_date?: string | null
+          previous_surgery_os?: boolean | null
+          previous_surgery_os_date?: string | null
+          referred_by?: string | null
           status?: Database["public"]["Enums"]["patient_status"] | null
         }
         Update: {
           address?: string | null
           birthdate?: string
           branch?: string
+          civil_status?: Database["public"]["Enums"]["civil_status_type"] | null
           contact_number?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -253,6 +557,18 @@ export type Database = {
           lastname?: string
           middlename?: string | null
           patient_id?: string
+          patient_photo_url?: string | null
+          philhealth_category?:
+            | Database["public"]["Enums"]["philhealth_category_type"]
+            | null
+          philhealth_member?: boolean | null
+          philhealth_no?: string | null
+          previous_surgery_notes?: string | null
+          previous_surgery_od?: boolean | null
+          previous_surgery_od_date?: string | null
+          previous_surgery_os?: boolean | null
+          previous_surgery_os_date?: string | null
+          referred_by?: string | null
           status?: Database["public"]["Enums"]["patient_status"] | null
         }
         Relationships: [
@@ -359,7 +675,9 @@ export type Database = {
         Row: {
           branch: string
           created_at: string | null
+          eye_operated: Database["public"]["Enums"]["eye_laterality"] | null
           id: string
+          iol_power: string | null
           patient_id: string
           procedure: string
           scheduled_date: string
@@ -370,7 +688,9 @@ export type Database = {
         Insert: {
           branch: string
           created_at?: string | null
+          eye_operated?: Database["public"]["Enums"]["eye_laterality"] | null
           id?: string
+          iol_power?: string | null
           patient_id: string
           procedure: string
           scheduled_date: string
@@ -381,7 +701,9 @@ export type Database = {
         Update: {
           branch?: string
           created_at?: string | null
+          eye_operated?: Database["public"]["Enums"]["eye_laterality"] | null
           id?: string
+          iol_power?: string | null
           patient_id?: string
           procedure?: string
           scheduled_date?: string
@@ -449,11 +771,32 @@ export type Database = {
         | "opd_staff"
         | "philhealth"
         | "manager"
+      cataract_type: "Mature" | "Immature" | "Hypermature" | "Trauma"
+      civil_status_type:
+        | "Single"
+        | "Married"
+        | "Widowed"
+        | "Divorced"
+        | "Separated"
       clearance_status: "Pending" | "Approved" | "Rejected"
+      eye_laterality: "OD" | "OS" | "OU"
       followup_status: "Scheduled" | "Completed" | "Cancelled"
+      followup_workflow_type:
+        | "clearance"
+        | "medical_management"
+        | "surgery_board"
+        | "post_op_evaluation"
+        | "doctor_referral"
       gender_type: "Male" | "Female" | "Other"
       intake_status: "Pending" | "Completed" | "Cancelled"
+      intake_task_type:
+        | "patient_record_creation"
+        | "visual_acuity"
+        | "ophthalmology_eval"
+        | "surgery_scheduling"
+        | "biometry_test"
       patient_status: "Active" | "Inactive"
+      philhealth_category_type: "Member" | "Dependent" | "Indigent" | "Senior"
       schedule_status: "Scheduled" | "Completed" | "Cancelled"
       surgery_status: "Scheduled" | "In Progress" | "Completed" | "Cancelled"
       title_type:
@@ -599,11 +942,35 @@ export const Constants = {
         "philhealth",
         "manager",
       ],
+      cataract_type: ["Mature", "Immature", "Hypermature", "Trauma"],
+      civil_status_type: [
+        "Single",
+        "Married",
+        "Widowed",
+        "Divorced",
+        "Separated",
+      ],
       clearance_status: ["Pending", "Approved", "Rejected"],
+      eye_laterality: ["OD", "OS", "OU"],
       followup_status: ["Scheduled", "Completed", "Cancelled"],
+      followup_workflow_type: [
+        "clearance",
+        "medical_management",
+        "surgery_board",
+        "post_op_evaluation",
+        "doctor_referral",
+      ],
       gender_type: ["Male", "Female", "Other"],
       intake_status: ["Pending", "Completed", "Cancelled"],
+      intake_task_type: [
+        "patient_record_creation",
+        "visual_acuity",
+        "ophthalmology_eval",
+        "surgery_scheduling",
+        "biometry_test",
+      ],
       patient_status: ["Active", "Inactive"],
+      philhealth_category_type: ["Member", "Dependent", "Indigent", "Senior"],
       schedule_status: ["Scheduled", "Completed", "Cancelled"],
       surgery_status: ["Scheduled", "In Progress", "Completed", "Cancelled"],
       title_type: [
