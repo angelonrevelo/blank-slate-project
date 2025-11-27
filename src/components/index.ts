@@ -4,4 +4,5 @@ export { Header } from './Header';
 export { ProtectedRoute } from './ProtectedRoute';
 export { PatientDataSheet } from './PatientDataSheet';
 export { SurgeryDetailModal } from './SurgeryDetailModal';
+export { FollowupDetailModal } from './FollowupDetailModal';
 export * from './ui';
