@@ -4,14 +4,21 @@ import { useAppState } from '@/context/AppContext';
 import { Button, Input, Modal, LoadingSpinner, Badge, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, ArrowUpDown, Eye } from 'lucide-react';
+import { Plus, Search, ArrowUpDown, Eye, Download, Filter, X } from 'lucide-react';
 
 type Patient = {
   id: string;
   patient_id: string;
-  name: string;
-  date: string;
+  firstname: string;
+  lastname: string;
+  middlename: string | null;
+  age: number | null;
+  gender: string;
+  contact_number: string | null;
+  stage: string | null;
   status: string;
+  created_at: string;
+  surgery_eye: string | null;
 };
 
 export function PatientsPage() {
@@ -21,9 +28,17 @@ export function PatientsPage() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-  const [showSortModal, setShowSortModal] = useState(false);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  
+  // Filter states
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [doctorFilter, setDoctorFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
+
   const [newPatient, setNewPatient] = useState({
     lastname: '',
     firstname: '',
@@ -34,17 +49,83 @@ export function PatientsPage() {
     address: '',
   });
 
+  const stageOptions = [
+    { value: 'new', label: 'New', color: 'bg-blue-100 text-blue-800' },
+    { value: 'file', label: 'Filing', color: 'bg-gray-100 text-gray-800' },
+    { value: 'va', label: 'Visual Acuity', color: 'bg-purple-100 text-purple-800' },
+    { value: 'opth', label: 'Ophthalmology', color: 'bg-indigo-100 text-indigo-800' },
+    { value: 'bio', label: 'Biometry', color: 'bg-cyan-100 text-cyan-800' },
+    { value: 'for_surgery', label: 'For Surgery', color: 'bg-orange-100 text-orange-800' },
+    { value: 'postponed', label: 'Postponed', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'clearance', label: 'Clearance', color: 'bg-pink-100 text-pink-800' },
+    { value: 'to_refer', label: 'To Refer', color: 'bg-red-100 text-red-800' },
+    { value: 'graduated', label: 'Graduated', color: 'bg-green-100 text-green-800' },
+  ];
+
   useEffect(() => {
     fetchPatients();
-  }, [viewingBranch, patientSort]);
+    fetchDoctors();
+  }, [viewingBranch, patientSort, stageFilter, statusFilter, doctorFilter, genderFilter]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchPatients();
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const fetchDoctors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname')
+        .eq('title', 'Doctor')
+        .eq('branch', viewingBranch);
+
+      if (error) throw error;
+      setDoctors(data || []);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
 
   const fetchPatients = async () => {
     setLoading(true);
     try {
       let query = supabase
         .from('patients')
-        .select('*')
+        .select(`
+          id,
+          patient_id,
+          firstname,
+          lastname,
+          middlename,
+          age,
+          gender,
+          contact_number,
+          stage,
+          status,
+          created_at,
+          surgery_eye,
+          intakes(assigned_doctor)
+        `)
         .eq('branch', viewingBranch);
+
+      // Apply stage filter
+      if (stageFilter.length > 0) {
+        query = query.in('stage', stageFilter as any);
+      }
+
+      // Apply status filter
+      if (statusFilter.length > 0) {
+        query = query.in('status', statusFilter as any);
+      }
+
+      // Apply gender filter
+      if (genderFilter !== 'all') {
+        query = query.eq('gender', genderFilter as any);
+      }
 
       // Apply sorting
       if (patientSort === 'DATE_DESC') {
@@ -55,31 +136,39 @@ export function PatientsPage() {
         query = query.order('lastname', { ascending: true });
       } else if (patientSort === 'NAME_DESC') {
         query = query.order('lastname', { ascending: false });
+      } else if (patientSort === 'AGE_ASC') {
+        query = query.order('age', { ascending: true });
+      } else if (patientSort === 'AGE_DESC') {
+        query = query.order('age', { ascending: false });
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      const formattedPatients: Patient[] = (data || []).map((p) => ({
-        id: p.id,
-        patient_id: p.patient_id ?? '',
-        name: `${p.firstname} ${p.lastname}`,
-        date: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A',
-        status: p.status ?? 'Active',
-      }));
+      let filteredPatients = data || [];
 
       // Apply search filter
       if (searchQuery) {
-        const filtered = formattedPatients.filter(p => {
+        filteredPatients = filteredPatients.filter(p => {
           const patientId = p.patient_id ?? '';
-          return p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                 patientId.toLowerCase().includes(searchQuery.toLowerCase());
+          const name = `${p.firstname} ${p.lastname}`.toLowerCase();
+          const search = searchQuery.toLowerCase();
+          return name.includes(search) || patientId.toLowerCase().includes(search);
         });
-        setPatients(filtered);
-      } else {
-        setPatients(formattedPatients);
       }
+
+      // Apply doctor filter (based on most recent intake)
+      if (doctorFilter !== 'all') {
+        filteredPatients = filteredPatients.filter(p => {
+          const intakes = (p as any).intakes;
+          if (!intakes || intakes.length === 0) return false;
+          // Check most recent intake
+          return intakes[0]?.assigned_doctor === doctorFilter;
+        });
+      }
+
+      setPatients(filteredPatients as Patient[]);
     } catch (error) {
       console.error('Error fetching patients:', error);
       toast({
@@ -106,8 +195,11 @@ export function PatientsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Generate patient ID
-      const patientId = `P${Date.now()}`;
+      // Generate patient ID using RPC function
+      const { data: patientId, error: rpcError } = await supabase
+        .rpc('get_next_patient_id', { p_branch: viewingBranch });
+
+      if (rpcError) throw rpcError;
 
       const { error } = await supabase.from('patients').insert({
         patient_id: patientId,
@@ -120,6 +212,8 @@ export function PatientsPage() {
         address: newPatient.address || null,
         branch: viewingBranch,
         created_by: user.id,
+        stage: 'new',
+        status: 'Active',
       });
 
       if (error) throw error;
@@ -150,58 +244,216 @@ export function PatientsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchPatients();
-  }, [searchQuery]);
+  const handleExportCSV = () => {
+    if (patients.length === 0) {
+      toast({
+        title: 'No Data',
+        description: 'No patients to export',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Patient ID', 'Name', 'Age', 'Gender', 'Contact', 'Stage', 'Status', 'Surgery Eye', 'Registered Date'];
+    const rows = patients.map(p => [
+      p.patient_id,
+      `${p.lastname}, ${p.firstname} ${p.middlename || ''}`.trim(),
+      p.age?.toString() || 'N/A',
+      p.gender,
+      p.contact_number || 'N/A',
+      p.stage || 'N/A',
+      p.status,
+      p.surgery_eye || 'N/A',
+      new Date(p.created_at).toLocaleDateString(),
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `patients_${viewingBranch}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Success',
+      description: `Exported ${patients.length} patients to CSV`,
+    });
+  };
+
+  const toggleStageFilter = (stage: string) => {
+    setStageFilter(prev =>
+      prev.includes(stage) ? prev.filter(s => s !== stage) : [...prev, stage]
+    );
+  };
+
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilter(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setStageFilter([]);
+    setStatusFilter([]);
+    setDoctorFilter('all');
+    setGenderFilter('all');
+    setSearchQuery('');
+  };
+
+  const activeFilterCount = stageFilter.length + statusFilter.length + 
+    (doctorFilter !== 'all' ? 1 : 0) + (genderFilter !== 'all' ? 1 : 0);
 
   const sortOptions = [
     { value: 'DATE_DESC', label: 'Date (Newest First)' },
     { value: 'DATE_ASC', label: 'Date (Oldest First)' },
     { value: 'NAME_ASC', label: 'Name (A-Z)' },
     { value: 'NAME_DESC', label: 'Name (Z-A)' },
+    { value: 'AGE_ASC', label: 'Age (Youngest First)' },
+    { value: 'AGE_DESC', label: 'Age (Oldest First)' },
   ];
 
+  const getStageBadge = (stage: string | null) => {
+    if (!stage) return null;
+    const option = stageOptions.find(s => s.value === stage);
+    return option ? (
+      <Badge className={option.color}>
+        {option.label}
+      </Badge>
+    ) : null;
+  };
+
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-200">
+      <div className="px-8 py-4 border-b border-border bg-secondary">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Patients</h1>
+            <h1 className="text-2xl font-medium text-foreground">Patients</h1>
             <p className="text-sm text-muted-foreground mt-1">{viewingBranch} Branch</p>
           </div>
           
-          <Button
-            onClick={() => setShowNewPatientModal(true)}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Patient
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleExportCSV}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button
+              onClick={() => setShowNewPatientModal(true)}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New Patient
+            </Button>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mt-6 flex items-center gap-3">
+        {/* Search & Filter Bar */}
+        <div className="mt-4 flex items-center gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
               type="search"
               placeholder="Search by name or patient ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-secondary border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
           
           <Button
             variant="outline"
-            onClick={() => setShowSortModal(true)}
+            onClick={() => setShowFiltersModal(true)}
+            size="sm"
+            className="gap-2 relative"
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setPatientSort(sortOptions[0].value)}
+            size="sm"
             className="gap-2"
           >
             <ArrowUpDown className="h-4 w-4" />
             Sort
           </Button>
+
+          {activeFilterCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              size="sm"
+              className="gap-2 text-red-600 hover:text-red-700"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </Button>
+          )}
         </div>
+
+        {/* Active Filters Display */}
+        {activeFilterCount > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {stageFilter.map(stage => {
+              const option = stageOptions.find(s => s.value === stage);
+              return (
+                <span key={stage} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                  {option?.label}
+                  <button onClick={() => toggleStageFilter(stage)} className="hover:bg-primary/20 rounded-full p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+            {statusFilter.map(status => (
+              <span key={status} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                {status}
+                <button onClick={() => toggleStatusFilter(status)} className="hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            {doctorFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                Doctor Filter
+                <button onClick={() => setDoctorFilter('all')} className="hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            {genderFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                {genderFilter}
+                <button onClick={() => setGenderFilter('all')} className="hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Patient Table */}
@@ -217,7 +469,11 @@ export function PatientsPage() {
                 <TableRow>
                   <TableHead>Patient ID</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Registered Date</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Stage</TableHead>
+                  <TableHead>Surgery Eye</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -226,12 +482,18 @@ export function PatientsPage() {
                 {patients.map((patient) => (
                   <TableRow 
                     key={patient.id}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-secondary/50"
                     onClick={() => navigate(`/information?patientId=${patient.id}`)}
                   >
-                    <TableCell className="font-medium">{patient.patient_id}</TableCell>
-                    <TableCell>{patient.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{patient.date}</TableCell>
+                    <TableCell className="font-medium text-foreground">{patient.patient_id}</TableCell>
+                    <TableCell className="text-foreground">
+                      {patient.lastname}, {patient.firstname} {patient.middlename}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{patient.age || 'N/A'}</TableCell>
+                    <TableCell className="text-muted-foreground">{patient.gender}</TableCell>
+                    <TableCell className="text-muted-foreground">{patient.contact_number || 'N/A'}</TableCell>
+                    <TableCell>{getStageBadge(patient.stage)}</TableCell>
+                    <TableCell className="text-muted-foreground">{patient.surgery_eye || '-'}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={patient.status === 'Active' ? 'success' : 'secondary'}
@@ -256,7 +518,6 @@ export function PatientsPage() {
               </TableBody>
             </Table>
             
-            {/* Pagination placeholder */}
             <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
               <p>Showing {patients.length} patient{patients.length !== 1 ? 's' : ''}</p>
             </div>
@@ -264,13 +525,13 @@ export function PatientsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <div className="bg-secondary rounded-full p-6 mb-4">
-              <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-muted" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Patients Found</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Patients Found</h3>
             <p className="text-muted-foreground mb-6 max-w-sm">
-              {searchQuery 
+              {searchQuery || activeFilterCount > 0
                 ? 'No patients match your search criteria. Try adjusting your filters.'
                 : 'Get started by adding your first patient to the system.'
               }
@@ -293,7 +554,7 @@ export function PatientsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Last Name"
+              label="Last Name *"
               placeholder="Enter last name"
               value={newPatient.lastname}
               onChange={(e) => setNewPatient({ ...newPatient, lastname: e.target.value })}
@@ -301,7 +562,7 @@ export function PatientsPage() {
               fullWidth
             />
             <Input
-              label="First Name"
+              label="First Name *"
               placeholder="Enter first name"
               value={newPatient.firstname}
               onChange={(e) => setNewPatient({ ...newPatient, firstname: e.target.value })}
@@ -317,7 +578,7 @@ export function PatientsPage() {
             />
             <Input
               type="date"
-              label="Birth Date"
+              label="Birth Date *"
               value={newPatient.birthdate}
               onChange={(e) => setNewPatient({ ...newPatient, birthdate: e.target.value })}
               required
@@ -331,13 +592,13 @@ export function PatientsPage() {
               fullWidth
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Gender *
               </label>
               <select 
                 value={newPatient.gender}
                 onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as 'Male' | 'Female' | 'Other' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select gender</option>
                 <option value="Male">Male</option>
@@ -370,30 +631,101 @@ export function PatientsPage() {
         </div>
       </Modal>
 
-      {/* Sort Modal */}
+      {/* Filters Modal */}
       <Modal
-        isOpen={showSortModal}
-        onClose={() => setShowSortModal(false)}
-        title="Sort Patients"
-        size="sm"
+        isOpen={showFiltersModal}
+        onClose={() => setShowFiltersModal(false)}
+        title="Filter Patients"
+        size="lg"
       >
-        <div className="space-y-2">
-          {sortOptions.map((option) => (
-            <button
-              key={option.value}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                patientSort === option.value
-                  ? 'bg-primary text-white'
-                  : 'hover:bg-gray-100'
-              }`}
-              onClick={() => {
-                setPatientSort(option.value);
-                setShowSortModal(false);
-              }}
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto">
+          {/* Stage Filter */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Patient Stage</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {stageOptions.map(option => (
+                <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={stageFilter.includes(option.value)}
+                    onChange={() => toggleStageFilter(option.value)}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className={`text-sm px-2 py-0.5 rounded ${option.color}`}>
+                    {option.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Status</h3>
+            <div className="flex gap-2">
+              {['Active', 'Inactive'].map(status => (
+                <label key={status} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={statusFilter.includes(status)}
+                    onChange={() => toggleStatusFilter(status)}
+                    className="rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-foreground">{status}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Doctor Filter */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Assigned Doctor</h3>
+            <select
+              value={doctorFilter}
+              onChange={(e) => setDoctorFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              {option.label}
-            </button>
-          ))}
+              <option value="all">All Doctors</option>
+              {doctors.map(doctor => (
+                <option key={doctor.id} value={doctor.id}>
+                  Dr. {doctor.firstname} {doctor.lastname}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Gender Filter */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Gender</h3>
+            <div className="flex gap-2">
+              {['all', 'Male', 'Female', 'Other'].map(gender => (
+                <button
+                  key={gender}
+                  onClick={() => setGenderFilter(gender)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    genderFilter === gender
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  {gender === 'all' ? 'All' : gender}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              fullWidth
+            >
+              Clear All
+            </Button>
+            <Button onClick={() => setShowFiltersModal(false)} fullWidth>
+              Apply Filters
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
