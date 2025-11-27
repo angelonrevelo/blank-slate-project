@@ -1,17 +1,33 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal, SignaturePad } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
+import { Button, Input, Modal, SignaturePad, Switch } from '@/components/ui';
+import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
+
+type TitleType = Database['public']['Enums']['title_type'];
 
 export function AccountPage() {
-  const { signOut, changePassword } = useAuth();
-  const {
-    userLastname,
-    userFirstname,
-    userTitle,
-    userBranch,
-    userSignature,
-  } = useAppState();
+  const { user, signOut, changePassword } = useAuth();
+  const { toast } = useToast();
+
+  // Profile state
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
+  const [title, setTitle] = useState<TitleType>('OPD');
+  const [branch, setBranch] = useState('');
+  const [signature, setSignature] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Branches list
+  const [branches, setBranches] = useState<Array<{ code: string; name: string }>>([]);
+
+  // Preferences state
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [soundAlerts, setSoundAlerts] = useState(true);
+  const [autoLogout, setAutoLogout] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
 
   // Password change modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -24,26 +40,179 @@ export function AccountPage() {
 
   // Signature modal state
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
 
   // Logout confirmation state
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const displayName = `${userLastname}${userFirstname ? `, ${userFirstname}` : ''}` || 'Loading...';
-  
-  const getDisplayTitle = () => {
-    if (!userTitle) return 'Loading...';
-    const titleMap: Record<string, string> = {
-      'OPD': 'OPD Staff',
-      'Doctor': 'Ophthalmologist',
-      'Nurse': 'OR Staff',
-      'Administrator': 'Administrator',
-      'Director': 'Medical Director',
-      'PhilHealth': 'PhilHealth Officer',
-      'Manager': 'Operations Manager',
+  // Load profile data
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load profile data',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (data) {
+        setFirstname(data.firstname || '');
+        setLastname(data.lastname || '');
+        setTitle(data.title as TitleType);
+        setBranch(data.branch || '');
+        setSignature(data.signature_link || '');
+      }
     };
-    return titleMap[userTitle] || userTitle;
+
+    const fetchBranches = async () => {
+      const { data } = await supabase
+        .from('branches')
+        .select('code, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (data) {
+        setBranches(data);
+      }
+    };
+
+    fetchProfile();
+    fetchBranches();
+  }, [user, toast]);
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    setIsSavingProfile(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          firstname,
+          lastname,
+          title,
+          branch,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Profile updated successfully',
+      });
+      setIsEditingProfile(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
+
+  const handleSaveSignature = async (dataUrl: string) => {
+    if (!user?.id) return;
+
+    setIsSavingSignature(true);
+    try {
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+
+      // Upload to storage
+      const fileName = `${user.id}-${Date.now()}.png`;
+      const { error: uploadError } = await supabase.storage
+        .from('patient-documents')
+        .upload(`signatures/${fileName}`, blob, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('patient-documents')
+        .getPublicUrl(`signatures/${fileName}`);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          signature_link: urlData.publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setSignature(urlData.publicUrl);
+      toast({
+        title: 'Success',
+        description: 'Signature updated successfully',
+      });
+      setShowSignatureModal(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save signature',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setIsSavingPreferences(true);
+    try {
+      // Store preferences in localStorage for now
+      localStorage.setItem('userPreferences', JSON.stringify({
+        emailNotifications,
+        soundAlerts,
+        autoLogout,
+      }));
+
+      toast({
+        title: 'Success',
+        description: 'Preferences saved successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save preferences',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
+
+  // Load preferences
+  useEffect(() => {
+    const savedPrefs = localStorage.getItem('userPreferences');
+    if (savedPrefs) {
+      const prefs = JSON.parse(savedPrefs);
+      setEmailNotifications(prefs.emailNotifications ?? true);
+      setSoundAlerts(prefs.soundAlerts ?? true);
+      setAutoLogout(prefs.autoLogout ?? false);
+    }
+  }, []);
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
@@ -101,37 +270,96 @@ export function AccountPage() {
       <div className="flex-1 p-6 md:p-10 overflow-auto">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Card */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h2>
+          <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Profile Information</h2>
+              {!isEditingProfile ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsEditingProfile(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    loading={isSavingProfile}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-4">
-              <Input
-                label="Full Name"
-                value={displayName}
-                disabled
-                fullWidth
-              />
-              
-              <Input
-                label="Title"
-                value={getDisplayTitle()}
-                disabled
-                fullWidth
-              />
-              
-              <Input
-                label="Branch"
-                value={userBranch || 'Loading...'}
-                disabled
-                fullWidth
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Last Name"
+                  value={lastname}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setLastname(e.target.value)}
+                  disabled={!isEditingProfile}
+                  fullWidth
+                />
+                
+                <Input
+                  label="First Name"
+                  value={firstname}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setFirstname(e.target.value)}
+                  disabled={!isEditingProfile}
+                  fullWidth
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Title</label>
+                <select
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value as TitleType)}
+                  disabled={!isEditingProfile}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="OPD">OPD Staff</option>
+                  <option value="Doctor">Ophthalmologist</option>
+                  <option value="Nurse">OR Staff</option>
+                  <option value="Administrator">Administrator</option>
+                  <option value="Director">Medical Director</option>
+                  <option value="PhilHealth">PhilHealth Officer</option>
+                  <option value="Manager">Operations Manager</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Branch</label>
+                <select
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  disabled={!isEditingProfile}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {branches.map((b) => (
+                    <option key={b.code} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Signature Card */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Signature</h2>
+              <h2 className="text-lg font-semibold text-foreground">Signature</h2>
               <Button
                 variant="outline"
                 size="sm"
@@ -141,24 +369,74 @@ export function AccountPage() {
               </Button>
             </div>
             
-            {userSignature ? (
-              <div className="border rounded-lg p-4 bg-gray-50">
+            {signature ? (
+              <div className="border border-border rounded-lg p-4 bg-muted">
                 <img
-                  src={userSignature}
+                  src={signature}
                   alt="User Signature"
                   className="max-h-[100px] object-contain mx-auto"
                 />
               </div>
             ) : (
-              <div className="border rounded-lg p-8 bg-gray-50 text-center">
-                <p className="text-gray-500">No signature uploaded</p>
+              <div className="border border-border rounded-lg p-8 bg-muted text-center">
+                <p className="text-muted-foreground">No signature uploaded</p>
               </div>
             )}
           </div>
 
+          {/* Preferences Card */}
+          <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Preferences</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSavePreferences}
+                loading={isSavingPreferences}
+              >
+                Save Preferences
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-border">
+                <div>
+                  <p className="font-medium text-foreground">Email Notifications</p>
+                  <p className="text-sm text-muted-foreground">Receive updates via email</p>
+                </div>
+                <Switch
+                  checked={emailNotifications}
+                  onChange={setEmailNotifications}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-3 border-b border-border">
+                <div>
+                  <p className="font-medium text-foreground">Sound Alerts</p>
+                  <p className="text-sm text-muted-foreground">Play sounds for notifications</p>
+                </div>
+                <Switch
+                  checked={soundAlerts}
+                  onChange={setSoundAlerts}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium text-foreground">Auto Logout</p>
+                  <p className="text-sm text-muted-foreground">Logout after 30 minutes of inactivity</p>
+                </div>
+                <Switch
+                  checked={autoLogout}
+                  onChange={setAutoLogout}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Security Card */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Security</h2>
+          <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Security</h2>
             
             <Button
               variant="outline"
@@ -198,12 +476,12 @@ export function AccountPage() {
       >
         {passwordSuccess ? (
           <div className="text-center py-4">
-            <div className="mb-4 text-success">
+            <div className="mb-4" style={{ color: 'hsl(var(--success))' }}>
               <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
             </div>
-            <p className="text-gray-700 mb-4">Password changed successfully!</p>
+            <p className="text-foreground mb-4">Password changed successfully!</p>
             <Button onClick={closePasswordModal} fullWidth>
               Close
             </Button>
@@ -211,7 +489,7 @@ export function AccountPage() {
         ) : (
           <form onSubmit={handlePasswordChange} className="space-y-4">
             {passwordError && (
-              <div className="bg-red-50 text-error text-sm p-3 rounded-lg">
+              <div className="bg-red-50 text-sm p-3 rounded-lg" style={{ color: 'hsl(var(--error))' }}>
                 {passwordError}
               </div>
             )}
@@ -221,7 +499,7 @@ export function AccountPage() {
               label="Current Password"
               placeholder="Enter current password"
               value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
               required
               fullWidth
               showPasswordToggle
@@ -232,7 +510,7 @@ export function AccountPage() {
               label="New Password"
               placeholder="Enter new password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
               required
               fullWidth
               showPasswordToggle
@@ -243,7 +521,7 @@ export function AccountPage() {
               label="Confirm New Password"
               placeholder="Confirm new password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
               required
               fullWidth
               showPasswordToggle
@@ -273,18 +551,21 @@ export function AccountPage() {
       {/* Signature Modal */}
       <Modal
         isOpen={showSignatureModal}
-        onClose={() => setShowSignatureModal(false)}
+        onClose={() => !isSavingSignature && setShowSignatureModal(false)}
         title="Update Signature"
         size="md"
       >
-        <SignaturePad
-          onSave={(dataUrl) => {
-            console.log('Signature saved:', dataUrl);
-            setShowSignatureModal(false);
-          }}
-          onClear={() => console.log('Signature cleared')}
-          initialSignature={userSignature}
-        />
+        {isSavingSignature ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
+            <p className="text-muted-foreground">Saving signature...</p>
+          </div>
+        ) : (
+          <SignaturePad
+            onSave={handleSaveSignature}
+            initialSignature={signature}
+          />
+        )}
       </Modal>
 
       {/* Logout Confirmation Modal */}
@@ -295,7 +576,7 @@ export function AccountPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Are you sure you want to sign out?
           </p>
           <div className="flex gap-3">
