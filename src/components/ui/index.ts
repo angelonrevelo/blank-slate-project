@@ -11,3 +11,7 @@ export { Switch } from './Switch';
 export { EyeSelector } from './EyeSelector';
 export { FileUpload } from './FileUpload';
 export { SignaturePad } from './SignaturePad';
+export { CalendarDayPicker } from './CalendarDayPicker';
+export { ImagePainter } from './ImagePainter';
+export { IOLSelectionTable } from './IOLSelectionTable';
+export { WebCameraCapture } from './WebCameraCapture';
