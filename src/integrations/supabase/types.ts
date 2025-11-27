@@ -270,12 +270,44 @@ export type Database = {
           biometry_os_k2: number | null
           branch: string
           created_at: string | null
+          cup_disc_ratio_od: string | null
+          cup_disc_ratio_os: string | null
           drawn_by: string | null
           examination_date: string | null
+          fundus_od: string | null
+          fundus_os: string | null
           id: string
           intake_id: string | null
           patient_id: string
           requested_by: string | null
+          slit_lamp_od: string | null
+          slit_lamp_os: string | null
+          va_dist_od: string | null
+          va_dist_od_axl: string | null
+          va_dist_od_bc: string | null
+          va_dist_od_k1: string | null
+          va_dist_od_k2: string | null
+          va_dist_od_ph: string | null
+          va_dist_os: string | null
+          va_dist_os_axl: string | null
+          va_dist_os_bc: string | null
+          va_dist_os_k1: string | null
+          va_dist_os_k2: string | null
+          va_dist_os_ph: string | null
+          va_near_od: string | null
+          va_near_od_ar: string | null
+          va_near_od_axl: string | null
+          va_near_od_bc: string | null
+          va_near_od_k1: string | null
+          va_near_od_k2: string | null
+          va_near_od_ph: string | null
+          va_near_os: string | null
+          va_near_os_ar: string | null
+          va_near_os_axl: string | null
+          va_near_os_bc: string | null
+          va_near_os_k1: string | null
+          va_near_os_k2: string | null
+          va_near_os_ph: string | null
           va_od: string | null
           va_od_corrected: string | null
           va_os: string | null
@@ -294,12 +326,44 @@ export type Database = {
           biometry_os_k2?: number | null
           branch: string
           created_at?: string | null
+          cup_disc_ratio_od?: string | null
+          cup_disc_ratio_os?: string | null
           drawn_by?: string | null
           examination_date?: string | null
+          fundus_od?: string | null
+          fundus_os?: string | null
           id?: string
           intake_id?: string | null
           patient_id: string
           requested_by?: string | null
+          slit_lamp_od?: string | null
+          slit_lamp_os?: string | null
+          va_dist_od?: string | null
+          va_dist_od_axl?: string | null
+          va_dist_od_bc?: string | null
+          va_dist_od_k1?: string | null
+          va_dist_od_k2?: string | null
+          va_dist_od_ph?: string | null
+          va_dist_os?: string | null
+          va_dist_os_axl?: string | null
+          va_dist_os_bc?: string | null
+          va_dist_os_k1?: string | null
+          va_dist_os_k2?: string | null
+          va_dist_os_ph?: string | null
+          va_near_od?: string | null
+          va_near_od_ar?: string | null
+          va_near_od_axl?: string | null
+          va_near_od_bc?: string | null
+          va_near_od_k1?: string | null
+          va_near_od_k2?: string | null
+          va_near_od_ph?: string | null
+          va_near_os?: string | null
+          va_near_os_ar?: string | null
+          va_near_os_axl?: string | null
+          va_near_os_bc?: string | null
+          va_near_os_k1?: string | null
+          va_near_os_k2?: string | null
+          va_near_os_ph?: string | null
           va_od?: string | null
           va_od_corrected?: string | null
           va_os?: string | null
@@ -318,12 +382,44 @@ export type Database = {
           biometry_os_k2?: number | null
           branch?: string
           created_at?: string | null
+          cup_disc_ratio_od?: string | null
+          cup_disc_ratio_os?: string | null
           drawn_by?: string | null
           examination_date?: string | null
+          fundus_od?: string | null
+          fundus_os?: string | null
           id?: string
           intake_id?: string | null
           patient_id?: string
           requested_by?: string | null
+          slit_lamp_od?: string | null
+          slit_lamp_os?: string | null
+          va_dist_od?: string | null
+          va_dist_od_axl?: string | null
+          va_dist_od_bc?: string | null
+          va_dist_od_k1?: string | null
+          va_dist_od_k2?: string | null
+          va_dist_od_ph?: string | null
+          va_dist_os?: string | null
+          va_dist_os_axl?: string | null
+          va_dist_os_bc?: string | null
+          va_dist_os_k1?: string | null
+          va_dist_os_k2?: string | null
+          va_dist_os_ph?: string | null
+          va_near_od?: string | null
+          va_near_od_ar?: string | null
+          va_near_od_axl?: string | null
+          va_near_od_bc?: string | null
+          va_near_od_k1?: string | null
+          va_near_od_k2?: string | null
+          va_near_od_ph?: string | null
+          va_near_os?: string | null
+          va_near_os_ar?: string | null
+          va_near_os_axl?: string | null
+          va_near_os_bc?: string | null
+          va_near_os_k1?: string | null
+          va_near_os_k2?: string | null
+          va_near_os_ph?: string | null
           va_od?: string | null
           va_od_corrected?: string | null
           va_os?: string | null
