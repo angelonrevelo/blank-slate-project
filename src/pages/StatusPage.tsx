@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner, Badge } from '@/components/ui';
 
 interface QueueStats {
   patientRecordCreation: number;
@@ -184,13 +184,13 @@ export function StatusPage() {
                         {surgery.procedure}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          surgery.status === 'Completed' ? 'bg-success/10 text-success border border-success/20' :
-                          surgery.status === 'In Progress' ? 'bg-primary/10 text-primary border border-primary/20' :
-                          'bg-secondary text-foreground border border-border'
-                        }`}>
+                        <Badge variant={
+                          surgery.status === 'Completed' ? 'success' :
+                          surgery.status === 'In Progress' ? 'default' :
+                          'secondary'
+                        }>
                           {surgery.status}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))}
@@ -215,18 +215,23 @@ interface QueueCardProps {
 }
 
 function QueueCard({ title, count, color }: QueueCardProps) {
-  const colorClasses = {
-    blue: 'bg-blue-100 text-blue-700',
-    green: 'bg-green-100 text-green-700',
-    purple: 'bg-purple-100 text-purple-700',
-    orange: 'bg-orange-100 text-orange-700',
-    red: 'bg-red-100 text-red-700',
+  const colorVariantMap: Record<string, any> = {
+    blue: 'new',
+    green: 'graduated',
+    purple: 'surgery',
+    orange: 'for_surgery',
+    red: 'to_refer',
   };
+
+  const variant = colorVariantMap[color] || 'secondary';
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm p-6">
       <h3 className="text-sm font-medium text-muted-foreground mb-2">{title}</h3>
-      <p className={`text-3xl font-bold ${colorClasses[color]}`}>{count}</p>
+      <div className="flex items-center gap-2">
+        <p className="text-3xl font-bold text-foreground">{count}</p>
+        <Badge variant={variant} className="text-xs">{color}</Badge>
+      </div>
     </div>
   );
 }
