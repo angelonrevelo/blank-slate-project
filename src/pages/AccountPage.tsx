@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button, Input, Modal, SignaturePad, Switch } from '@/components/ui';
+import { Button, Input, Modal, SignaturePad, Switch, Select } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -322,36 +322,33 @@ export function AccountPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Title</label>
-                <select
+                <Select
                   value={title}
                   onChange={(e) => setTitle(e.target.value as TitleType)}
                   disabled={!isEditingProfile}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="OPD">OPD Staff</option>
-                  <option value="Doctor">Ophthalmologist</option>
-                  <option value="Nurse">OR Staff</option>
-                  <option value="Administrator">Administrator</option>
-                  <option value="Director">Medical Director</option>
-                  <option value="PhilHealth">PhilHealth Officer</option>
-                  <option value="Manager">Operations Manager</option>
-                </select>
+                  options={[
+                    { value: 'OPD', label: 'OPD Staff' },
+                    { value: 'Doctor', label: 'Ophthalmologist' },
+                    { value: 'Nurse', label: 'OR Staff' },
+                    { value: 'Administrator', label: 'Administrator' },
+                    { value: 'Director', label: 'Medical Director' },
+                    { value: 'PhilHealth', label: 'PhilHealth Officer' },
+                    { value: 'Manager', label: 'Operations Manager' },
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Branch</label>
-                <select
+                <Select
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   disabled={!isEditingProfile}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {branches.map((b) => (
-                    <option key={b.code} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  options={branches.map((b) => ({
+                    value: b.name,
+                    label: b.name,
+                  }))}
+                />
               </div>
             </div>
           </div>

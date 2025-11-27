@@ -27,11 +27,11 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6 flex-shrink-0">
       {/* Search Bar */}
       <div className="flex-1 max-w-xl">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
             type="text"
             placeholder="Search patients, appointments... (Cmd+K)"
@@ -44,7 +44,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         {/* Notifications */}
         <button className="relative p-2 hover:bg-secondary rounded-lg transition-colors">
-          <Bell className="h-5 w-5 text-gray-600" />
+          <Bell className="h-5 w-5 text-foreground" />
           <span className="absolute top-1 right-1 h-2 w-2 bg-error rounded-full"></span>
         </button>
 
@@ -55,10 +55,10 @@ export function Header() {
               <AvatarFallback className="text-xs">{getInitials()}</AvatarFallback>
             </Avatar>
             <div className="text-left hidden md:block">
-              <p className="text-sm font-medium text-gray-900">{user?.email?.split('@')[0] || 'User'}</p>
-              <p className="text-xs text-gray-500">Staff</p>
+              <p className="text-sm font-medium text-foreground">{user?.email?.split('@')[0] || 'User'}</p>
+              <p className="text-xs text-muted-foreground">Staff</p>
             </div>
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
