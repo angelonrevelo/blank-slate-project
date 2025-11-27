@@ -45,7 +45,7 @@ export function MyTasksPage() {
             firstname,
             lastname
           ),
-          profiles:assigned_to (
+          profiles!assigned_to (
             firstname,
             lastname
           )
