@@ -1,31 +1,51 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { Input, LoadingSpinner } from '@/components/ui';
+import { KanbanBoard } from '@/components/KanbanBoard';
+import { SurgeryDetailModal } from '@/components/SurgeryDetailModal';
 import { supabase } from '@/integrations/supabase/client';
-
-type Surgery = {
-  id: string;
-  patient: string;
-  procedure: string;
-  date: string;
-  time: string;
-  surgeon: string;
-  status: string;
-};
+import type { KanbanItem } from '@/components/KanbanBoard';
 
 export function SurgeryPage() {
-  const navigate = useNavigate();
   const { viewingBranch } = useAppState();
   
-  const [selectedDate, setSelectedDate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [surgeries, setSurgeries] = useState<Surgery[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [surgeries, setSurgeries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSurgery, setSelectedSurgery] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [surgeonFilter, setSurgeonFilter] = useState('all');
+  const [surgeons, setSurgeons] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const kanbanColumns = [
+    { id: 'scheduled', title: 'Scheduled', color: 'bg-blue-500' },
+    { id: 'waiting', title: 'Waiting', color: 'bg-gray-500' },
+    { id: 'prep', title: 'Prep', color: 'bg-orange-500' },
+    { id: 'in_progress', title: 'In Progress', color: 'bg-purple-500' },
+    { id: 'recovery', title: 'Recovery', color: 'bg-yellow-500' },
+    { id: 'completed', title: 'Completed', color: 'bg-green-500' },
+  ];
 
   useEffect(() => {
     fetchSurgeries();
-  }, [viewingBranch, selectedDate, filterStatus]);
+    fetchSurgeons();
+  }, [viewingBranch, selectedDate, surgeonFilter]);
+
+  const fetchSurgeons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname')
+        .eq('title', 'Doctor')
+        .eq('branch', viewingBranch);
+
+      if (error) throw error;
+      setSurgeons(data || []);
+    } catch (error) {
+      console.error('Error fetching surgeons:', error);
+    }
+  };
 
   const fetchSurgeries = async () => {
     setLoading(true);
@@ -38,44 +58,37 @@ export function SurgeryPage() {
           scheduled_date,
           scheduled_time,
           status,
-          patient:patients(firstname, lastname),
-          surgeon:profiles!surgeries_surgeon_id_fkey(firstname, lastname)
+          stage,
+          eye_operated,
+          iol_power,
+          admitted_time,
+          started_waiting,
+          ended_waiting,
+          started_prep,
+          ended_prep,
+          started_prog,
+          ended_prog,
+          started_recovery,
+          ended_recovery,
+          cancelreason,
+          patient:patients(id, patient_id, firstname, lastname),
+          surgeon:profiles!surgeries_surgeon_id_fkey(firstname, lastname),
+          scrub_nurse:profiles!surgeries_scrub_nurse_fkey(firstname, lastname)
         `)
         .eq('branch', viewingBranch)
-        .order('scheduled_date', { ascending: true });
+        .eq('scheduled_date', selectedDate)
+        .eq('active', true)
+        .order('scheduled_time', { ascending: true });
 
-      if (selectedDate) {
-        query = query.eq('scheduled_date', selectedDate);
-      }
-
-      if (filterStatus !== 'all') {
-        const statusMap: Record<string, 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled'> = {
-          'scheduled': 'Scheduled',
-          'in-progress': 'In Progress',
-          'completed': 'Completed',
-          'cancelled': 'Cancelled',
-        };
-        const mappedStatus = statusMap[filterStatus];
-        if (mappedStatus) {
-          query = query.eq('status', mappedStatus);
-        }
+      if (surgeonFilter !== 'all') {
+        query = query.eq('surgeon_id', surgeonFilter);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      const formattedSurgeries: Surgery[] = (data || []).map((s: any) => ({
-        id: s.id,
-        patient: `${s.patient.firstname} ${s.patient.lastname}`,
-        procedure: s.procedure,
-        date: new Date(s.scheduled_date).toLocaleDateString(),
-        time: s.scheduled_time,
-        surgeon: s.surgeon ? `Dr. ${s.surgeon.firstname} ${s.surgeon.lastname}` : 'Not assigned',
-        status: s.status,
-      }));
-
-      setSurgeries(formattedSurgeries);
+      setSurgeries(data || []);
     } catch (error) {
       console.error('Error fetching surgeries:', error);
     } finally {
@@ -83,31 +96,90 @@ export function SurgeryPage() {
     }
   };
 
-  const statusFilters = [
-    { value: 'all', label: 'All' },
-    { value: 'scheduled', label: 'Scheduled' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
-  ];
+  const calculateElapsedTime = (startField: string, surgery: any) => {
+    const startTime = surgery[startField];
+    if (!startTime) return '';
+    
+    const start = new Date(startTime);
+    const now = new Date();
+    const diffMs = now.getTime() - start.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) return `${diffMins}m`;
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const getStageStartField = (stage: string) => {
+    switch (stage) {
+      case 'waiting': return 'started_waiting';
+      case 'prep': return 'started_prep';
+      case 'in_progress': return 'started_prog';
+      case 'recovery': return 'started_recovery';
+      default: return null;
+    }
+  };
+
+  const kanbanItems: KanbanItem[] = surgeries
+    .filter(s => {
+      if (!searchQuery) return true;
+      const search = searchQuery.toLowerCase();
+      return (
+        s.patient.firstname.toLowerCase().includes(search) ||
+        s.patient.lastname.toLowerCase().includes(search) ||
+        s.patient.patient_id.toLowerCase().includes(search)
+      );
+    })
+    .map(surgery => {
+      const startField = getStageStartField(surgery.stage);
+      const elapsed = startField ? calculateElapsedTime(startField, surgery) : '';
+
+      return {
+        id: surgery.id,
+        patientName: `${surgery.patient.firstname} ${surgery.patient.lastname}`,
+        patientId: surgery.patient.patient_id,
+        assignedTo: surgery.surgeon ? `Dr. ${surgery.surgeon.firstname} ${surgery.surgeon.lastname}` : undefined,
+        waitTime: elapsed,
+        status: surgery.procedure,
+        column: surgery.stage || 'scheduled',
+        metadata: {
+          procedure: surgery.procedure,
+          eye: surgery.eye_operated,
+          scheduledTime: surgery.scheduled_time,
+          iolPower: surgery.iol_power,
+        },
+      };
+    });
+
+  const handleCardClick = (item: KanbanItem) => {
+    const surgery = surgeries.find(s => s.id === item.id);
+    if (surgery) {
+      setSelectedSurgery({
+        ...surgery,
+        patient_name: `${surgery.patient.firstname} ${surgery.patient.lastname}`,
+        patient_id: surgery.patient.patient_id,
+        surgeon: surgery.surgeon ? `Dr. ${surgery.surgeon.firstname} ${surgery.surgeon.lastname}` : 'Not assigned',
+        scrub_nurse: surgery.scrub_nurse ? `${surgery.scrub_nurse.firstname} ${surgery.scrub_nurse.lastname}` : 'Not assigned',
+      });
+      setShowDetailModal(true);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="bg-secondary px-6 md:px-10 py-6">
+      <header className="bg-secondary px-6 md:px-10 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-3xl md:text-4xl font-medium text-gray-900">
-            Surgery Schedule
-          </h1>
-          
-          <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+          <h1 className="text-2xl font-medium text-foreground">Surgery Day</h1>
+          <span className="text-sm text-muted-foreground bg-background px-3 py-1 rounded-full">
             {viewingBranch} Branch
           </span>
         </div>
       </header>
 
       {/* Filters */}
-      <div className="px-6 md:px-10 py-4 bg-white border-b">
+      <div className="px-6 md:px-10 py-4 bg-background border-b border-border">
         <div className="flex flex-col md:flex-row gap-4">
           <Input
             type="date"
@@ -116,86 +188,55 @@ export function SurgeryPage() {
             className="md:w-48"
           />
           
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-            {statusFilters.map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => setFilterStatus(filter.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  filterStatus === filter.value
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {filter.label}
-              </button>
+          <select
+            value={surgeonFilter}
+            onChange={(e) => setSurgeonFilter(e.target.value)}
+            className="md:w-48 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All Surgeons</option>
+            {surgeons.map((surgeon) => (
+              <option key={surgeon.id} value={surgeon.id}>
+                Dr. {surgeon.firstname} {surgeon.lastname}
+              </option>
             ))}
-          </div>
+          </select>
+
+          <Input
+            type="text"
+            placeholder="Search patient..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="md:flex-1"
+          />
         </div>
       </div>
 
-      {/* Surgery List */}
-      <div className="flex-1 p-6 md:p-10 overflow-auto">
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <LoadingSpinner size="lg" />
           </div>
-        ) : surgeries.length > 0 ? (
-          <div className="grid gap-4">
-            {surgeries.map((surgery) => (
-              <div
-                key={surgery.id}
-                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/information`, { state: { visitID: surgery.id } })}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{surgery.patient}</h3>
-                    <p className="text-sm text-primary font-medium">{surgery.procedure}</p>
-                    <p className="text-sm text-gray-500 mt-1">Surgeon: {surgery.surgeon}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{surgery.date}</span>
-                      <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{surgery.time}</span>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    surgery.status === 'Scheduled'
-                      ? 'bg-blue-100 text-blue-800'
-                      : surgery.status === 'In Progress'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : surgery.status === 'Completed'
-                      ? 'bg-green-100 text-green-800'
-                      : surgery.status === 'Cancelled'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {surgery.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <svg className="w-16 h-16 text-gray-300 mb-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Surgeries Scheduled</h3>
-            <p className="text-gray-500">
-              {selectedDate || filterStatus !== 'all'
-                ? 'No surgeries match your search filters'
-                : 'No surgeries scheduled yet'
-              }
-            </p>
-          </div>
+          <KanbanBoard
+            columns={kanbanColumns}
+            items={kanbanItems}
+            onCardClick={handleCardClick}
+            onSearch={setSearchQuery}
+          />
         )}
       </div>
+
+      {/* Surgery Detail Modal */}
+      <SurgeryDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedSurgery(null);
+        }}
+        surgery={selectedSurgery}
+        onUpdate={fetchSurgeries}
+      />
     </div>
   );
 }
