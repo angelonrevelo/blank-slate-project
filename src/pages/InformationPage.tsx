@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { Button, Input, Switch, EyeSelector, FileUpload, Modal, SignaturePad } from '@/components/ui';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type InfoTabType = 'InfoHistory' | 'VisualAcuity' | 'AnteriorSegment' | 'SlitLamp' | 'Fundus' | 'Diagnosis' | 'Biometry' | 'Clearance';
 
@@ -30,11 +32,20 @@ interface PatientData {
 
 export function InformationPage() {
   const navigate = useNavigate();
-  const { setInfoTab } = useAppState();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { setInfoTab, viewingBranch } = useAppState();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<InfoTabType>('InfoHistory');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showPreviousResults, setShowPreviousResults] = useState(false);
+  
+  // URL parameters
+  const patientId = searchParams.get('patientId');
+  const intakeId = searchParams.get('intakeId');
+  const followupId = searchParams.get('followupId');
+  const visitID = location.state?.visitID;
   
   const [patientData, setPatientData] = useState<Partial<PatientData>>({
     philhealth_member: false,
@@ -191,13 +202,503 @@ export function InformationPage() {
     return age;
   };
 
+  // Load patient data on mount
+  useEffect(() => {
+    const loadPatientData = async () => {
+      try {
+        setLoading(true);
+        let patientDbId: string | null = null;
+        let intakeDbId: string | null = null;
+
+        // Determine which ID we have and fetch patient
+        if (patientId) {
+          patientDbId = patientId;
+        } else if (intakeId) {
+          const { data: intake } = await supabase
+            .from('intakes')
+            .select('patient_id')
+            .eq('id', intakeId)
+            .single();
+          if (intake) {
+            patientDbId = intake.patient_id;
+            intakeDbId = intakeId;
+          }
+        } else if (followupId) {
+          const { data: followup } = await supabase
+            .from('followups')
+            .select('patient_id, intake_id')
+            .eq('id', followupId)
+            .single();
+          if (followup) {
+            patientDbId = followup.patient_id;
+            intakeDbId = followup.intake_id;
+          }
+        } else if (visitID) {
+          // Check if visitID is an intake or followup
+          const { data: intake } = await supabase
+            .from('intakes')
+            .select('patient_id, id')
+            .eq('id', visitID)
+            .maybeSingle();
+          if (intake) {
+            patientDbId = intake.patient_id;
+            intakeDbId = intake.id;
+          } else {
+            const { data: followup } = await supabase
+              .from('followups')
+              .select('patient_id, intake_id')
+              .eq('id', visitID)
+              .maybeSingle();
+            if (followup) {
+              patientDbId = followup.patient_id;
+              intakeDbId = followup.intake_id;
+            }
+          }
+        }
+
+        if (!patientDbId) {
+          setLoading(false);
+          return; // New patient form
+        }
+
+        // Fetch patient data
+        const { data: patient, error: patientError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('id', patientDbId)
+          .single();
+
+        if (patientError) throw patientError;
+
+        if (patient) {
+          setPatientData({
+            id: patient.id,
+            patient_id: patient.patient_id,
+            firstname: patient.firstname,
+            lastname: patient.lastname,
+            middlename: patient.middlename || '',
+            birthdate: patient.birthdate,
+            gender: patient.gender,
+            contact_number: patient.contact_number || '',
+            address: patient.address || '',
+            civil_status: patient.civil_status || '',
+            referred_by: patient.referred_by || '',
+            philhealth_member: patient.philhealth_member || false,
+            philhealth_no: patient.philhealth_no || '',
+            philhealth_category: patient.philhealth_category || '',
+            previous_surgery_od: patient.previous_surgery_od || false,
+            previous_surgery_od_date: patient.previous_surgery_od_date || '',
+            previous_surgery_os: patient.previous_surgery_os || false,
+            previous_surgery_os_date: patient.previous_surgery_os_date || '',
+            previous_surgery_notes: patient.previous_surgery_notes || '',
+          });
+        }
+
+        // Fetch intake data if we have an intake ID
+        if (intakeDbId) {
+          const { data: intake } = await supabase
+            .from('intakes')
+            .select('*')
+            .eq('id', intakeDbId)
+            .single();
+
+          if (intake) {
+            // Load chief complaints, ocular history, past medical history
+            if (intake.chief_complaints) {
+              const cc = intake.chief_complaints as any;
+              setChiefComplaints({
+                blurredVision: cc.blurredVision || false,
+                eyePain: cc.eyePain || false,
+                cloudy: cc.cloudy || false,
+                itchy: cc.itchy || false,
+                floaters: cc.floaters || false,
+                redness: cc.redness || false,
+                teary: cc.teary || false,
+                headache: cc.headache || false,
+                others: cc.others || false,
+              });
+            }
+            if (intake.ocular_history) {
+              const oh = intake.ocular_history as any;
+              setOcularHistory({
+                trauma: oh.trauma || false,
+                glaucoma: oh.glaucoma || false,
+                retinopathy: oh.retinopathy || false,
+                cataract: oh.cataract || false,
+                others: oh.others || false,
+              });
+            }
+            if (intake.past_medical_history) {
+              const pmh = intake.past_medical_history as any;
+              setPastMedicalHistory({
+                diabetes: pmh.diabetes || false,
+                hpn: pmh.hpn || false,
+                heartProblem: pmh.heartProblem || false,
+                bloodThinner: pmh.bloodThinner || false,
+                others: pmh.others || false,
+              });
+            }
+          }
+
+          // Fetch eye examination data
+          const { data: exam } = await supabase
+            .from('eye_examinations')
+            .select('*')
+            .eq('patient_id', patientDbId)
+            .eq('intake_id', intakeDbId)
+            .maybeSingle();
+
+          if (exam) {
+            setVisualAcuity({
+              nearOd: exam.va_near_od || '',
+              nearOdBc: exam.va_near_od_bc || '',
+              nearOdPh: exam.va_near_od_ph || '',
+              nearOdAr: exam.va_near_od_ar || '',
+              nearOdK1: exam.va_near_od_k1 || '',
+              nearOdK2: exam.va_near_od_k2 || '',
+              nearOdAxl: exam.va_near_od_axl || '',
+              nearOs: exam.va_near_os || '',
+              nearOsBc: exam.va_near_os_bc || '',
+              nearOsPh: exam.va_near_os_ph || '',
+              nearOsAr: exam.va_near_os_ar || '',
+              nearOsK1: exam.va_near_os_k1 || '',
+              nearOsK2: exam.va_near_os_k2 || '',
+              nearOsAxl: exam.va_near_os_axl || '',
+              distOd: exam.va_dist_od || '',
+              distOdBc: exam.va_dist_od_bc || '',
+              distOdPh: exam.va_dist_od_ph || '',
+              distOdK1: exam.va_dist_od_k1 || '',
+              distOdK2: exam.va_dist_od_k2 || '',
+              distOdAxl: exam.va_dist_od_axl || '',
+              distOs: exam.va_dist_os || '',
+              distOsBc: exam.va_dist_os_bc || '',
+              distOsPh: exam.va_dist_os_ph || '',
+              distOsK1: exam.va_dist_os_k1 || '',
+              distOsK2: exam.va_dist_os_k2 || '',
+              distOsAxl: exam.va_dist_os_axl || '',
+            });
+
+            setAnteriorSegment({
+              odDrawing: exam.anterior_segment_od_drawing || '',
+              osDrawing: exam.anterior_segment_os_drawing || '',
+            });
+
+            setSlitLamp({
+              od: exam.slit_lamp_od || '',
+              os: exam.slit_lamp_os || '',
+            });
+
+            setFundus({
+              od: exam.fundus_od || '',
+              os: exam.fundus_os || '',
+              cupDiscRatioOd: exam.cup_disc_ratio_od || '',
+              cupDiscRatioOs: exam.cup_disc_ratio_os || '',
+            });
+
+            setBiometry({
+              odK1: exam.biometry_od_k1?.toString() || '',
+              odK2: exam.biometry_od_k2?.toString() || '',
+              odAl: exam.biometry_od_al?.toString() || '',
+              odAcd: exam.biometry_od_acd?.toString() || '',
+              osK1: exam.biometry_os_k1?.toString() || '',
+              osK2: exam.biometry_os_k2?.toString() || '',
+              osAl: exam.biometry_os_al?.toString() || '',
+              osAcd: exam.biometry_os_acd?.toString() || '',
+            });
+          }
+
+          // Fetch diagnosis data
+          const { data: diagnosisData } = await supabase
+            .from('diagnoses')
+            .select('*')
+            .eq('patient_id', patientDbId)
+            .eq('intake_id', intakeDbId)
+            .maybeSingle();
+
+          if (diagnosisData) {
+            setDiagnosis({
+              pseudophakia: diagnosisData.pseudophakia || false,
+              pseudophakiaLaterality: (diagnosisData.pseudophakia_laterality || '') as any,
+              pseudophakiaIol: diagnosisData.pseudophakia_iol_details || '',
+              cataract: diagnosisData.cataract || false,
+              cataractType: {
+                mature: diagnosisData.cataract_type === 'Mature',
+                immature: diagnosisData.cataract_type === 'Immature',
+                hypermature: diagnosisData.cataract_type === 'Hypermature',
+                trauma: diagnosisData.cataract_type === 'Trauma',
+              },
+              cataractLaterality: (diagnosisData.cataract_laterality || '') as any,
+              pterygium: diagnosisData.pterygium || false,
+              pterygiumLaterality: (diagnosisData.pterygium_laterality || '') as any,
+              refractionError: diagnosisData.refraction_error || false,
+              refractionLaterality: (diagnosisData.refraction_laterality || '') as any,
+              refractionNotes: diagnosisData.refraction_notes || '',
+              other: !!diagnosisData.other_diagnosis,
+              otherDiagnosis: diagnosisData.other_diagnosis || '',
+              otherLaterality: (diagnosisData.other_laterality || '') as any,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading patient data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load patient data',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPatientData();
+  }, [patientId, intakeId, followupId, visitID]);
+
   const handleSavePatientInfo = async () => {
+    if (!patientData.lastname || !patientData.firstname || !patientData.birthdate || !patientData.gender) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields (name, birthdate, gender)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      console.log('Saving patient data:', patientData);
-      // TODO: Implement Supabase save
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      let savedPatientId = patientData.id;
+
+      // Save or update patient
+      if (savedPatientId) {
+        // Update existing patient
+        const { error } = await supabase
+          .from('patients')
+          .update({
+            lastname: patientData.lastname,
+            firstname: patientData.firstname,
+            middlename: patientData.middlename || null,
+            birthdate: patientData.birthdate,
+            gender: patientData.gender as any,
+            contact_number: patientData.contact_number || null,
+            address: patientData.address || null,
+            civil_status: patientData.civil_status as any || null,
+            referred_by: patientData.referred_by || null,
+            philhealth_member: patientData.philhealth_member,
+            philhealth_no: patientData.philhealth_no || null,
+            philhealth_category: patientData.philhealth_category as any || null,
+            previous_surgery_od: patientData.previous_surgery_od,
+            previous_surgery_od_date: patientData.previous_surgery_od_date || null,
+            previous_surgery_os: patientData.previous_surgery_os,
+            previous_surgery_os_date: patientData.previous_surgery_os_date || null,
+            previous_surgery_notes: patientData.previous_surgery_notes || null,
+          })
+          .eq('id', savedPatientId);
+
+        if (error) throw error;
+      } else {
+        // Create new patient
+        const generatedPatientId = `P${Date.now()}`;
+        const { data: newPatient, error } = await supabase
+          .from('patients')
+          .insert({
+            patient_id: generatedPatientId,
+            lastname: patientData.lastname,
+            firstname: patientData.firstname,
+            middlename: patientData.middlename || null,
+            birthdate: patientData.birthdate,
+            gender: patientData.gender as any,
+            contact_number: patientData.contact_number || null,
+            address: patientData.address || null,
+            civil_status: patientData.civil_status as any || null,
+            referred_by: patientData.referred_by || null,
+            philhealth_member: patientData.philhealth_member,
+            philhealth_no: patientData.philhealth_no || null,
+            philhealth_category: patientData.philhealth_category as any || null,
+            previous_surgery_od: patientData.previous_surgery_od,
+            previous_surgery_od_date: patientData.previous_surgery_od_date || null,
+            previous_surgery_os: patientData.previous_surgery_os,
+            previous_surgery_os_date: patientData.previous_surgery_os_date || null,
+            previous_surgery_notes: patientData.previous_surgery_notes || null,
+            branch: viewingBranch,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedPatientId = newPatient.id;
+        setPatientData({ ...patientData, id: savedPatientId, patient_id: generatedPatientId });
+      }
+
+      // Create or update intake if we have one
+      let savedIntakeId = intakeId;
+      if (!savedIntakeId && savedPatientId) {
+        const { data: newIntake, error } = await supabase
+          .from('intakes')
+          .insert({
+            patient_id: savedPatientId,
+            branch: viewingBranch,
+            chief_complaints: chiefComplaints,
+            ocular_history: ocularHistory,
+            past_medical_history: pastMedicalHistory,
+            status: 'Pending',
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedIntakeId = newIntake.id;
+      } else if (savedIntakeId) {
+        const { error } = await supabase
+          .from('intakes')
+          .update({
+            chief_complaints: chiefComplaints,
+            ocular_history: ocularHistory,
+            past_medical_history: pastMedicalHistory,
+          })
+          .eq('id', savedIntakeId);
+
+        if (error) throw error;
+      }
+
+      // Save eye examination data
+      if (savedPatientId && savedIntakeId) {
+        const { data: existingExam } = await supabase
+          .from('eye_examinations')
+          .select('id')
+          .eq('patient_id', savedPatientId)
+          .eq('intake_id', savedIntakeId)
+          .maybeSingle();
+
+        const examData = {
+          patient_id: savedPatientId,
+          intake_id: savedIntakeId,
+          branch: viewingBranch,
+          va_near_od: visualAcuity.nearOd || null,
+          va_near_od_bc: visualAcuity.nearOdBc || null,
+          va_near_od_ph: visualAcuity.nearOdPh || null,
+          va_near_od_ar: visualAcuity.nearOdAr || null,
+          va_near_od_k1: visualAcuity.nearOdK1 || null,
+          va_near_od_k2: visualAcuity.nearOdK2 || null,
+          va_near_od_axl: visualAcuity.nearOdAxl || null,
+          va_near_os: visualAcuity.nearOs || null,
+          va_near_os_bc: visualAcuity.nearOsBc || null,
+          va_near_os_ph: visualAcuity.nearOsPh || null,
+          va_near_os_ar: visualAcuity.nearOsAr || null,
+          va_near_os_k1: visualAcuity.nearOsK1 || null,
+          va_near_os_k2: visualAcuity.nearOsK2 || null,
+          va_near_os_axl: visualAcuity.nearOsAxl || null,
+          va_dist_od: visualAcuity.distOd || null,
+          va_dist_od_bc: visualAcuity.distOdBc || null,
+          va_dist_od_ph: visualAcuity.distOdPh || null,
+          va_dist_od_k1: visualAcuity.distOdK1 || null,
+          va_dist_od_k2: visualAcuity.distOdK2 || null,
+          va_dist_od_axl: visualAcuity.distOdAxl || null,
+          va_dist_os: visualAcuity.distOs || null,
+          va_dist_os_bc: visualAcuity.distOsBc || null,
+          va_dist_os_ph: visualAcuity.distOsPh || null,
+          va_dist_os_k1: visualAcuity.distOsK1 || null,
+          va_dist_os_k2: visualAcuity.distOsK2 || null,
+          va_dist_os_axl: visualAcuity.distOsAxl || null,
+          anterior_segment_od_drawing: anteriorSegment.odDrawing || null,
+          anterior_segment_os_drawing: anteriorSegment.osDrawing || null,
+          slit_lamp_od: slitLamp.od || null,
+          slit_lamp_os: slitLamp.os || null,
+          fundus_od: fundus.od || null,
+          fundus_os: fundus.os || null,
+          cup_disc_ratio_od: fundus.cupDiscRatioOd || null,
+          cup_disc_ratio_os: fundus.cupDiscRatioOs || null,
+          biometry_od_k1: biometry.odK1 ? parseFloat(biometry.odK1) : null,
+          biometry_od_k2: biometry.odK2 ? parseFloat(biometry.odK2) : null,
+          biometry_od_al: biometry.odAl ? parseFloat(biometry.odAl) : null,
+          biometry_od_acd: biometry.odAcd ? parseFloat(biometry.odAcd) : null,
+          biometry_os_k1: biometry.osK1 ? parseFloat(biometry.osK1) : null,
+          biometry_os_k2: biometry.osK2 ? parseFloat(biometry.osK2) : null,
+          biometry_os_al: biometry.osAl ? parseFloat(biometry.osAl) : null,
+          biometry_os_acd: biometry.osAcd ? parseFloat(biometry.osAcd) : null,
+        };
+
+        if (existingExam) {
+          const { error } = await supabase
+            .from('eye_examinations')
+            .update(examData)
+            .eq('id', existingExam.id);
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('eye_examinations')
+            .insert(examData);
+
+          if (error) throw error;
+        }
+
+        // Save diagnosis data
+        const { data: existingDiagnosis } = await supabase
+          .from('diagnoses')
+          .select('id')
+          .eq('patient_id', savedPatientId)
+          .eq('intake_id', savedIntakeId)
+          .maybeSingle();
+
+        const getCataractType = () => {
+          if (diagnosis.cataractType.mature) return 'Mature';
+          if (diagnosis.cataractType.immature) return 'Immature';
+          if (diagnosis.cataractType.hypermature) return 'Hypermature';
+          if (diagnosis.cataractType.trauma) return 'Trauma';
+          return null;
+        };
+
+        const diagnosisData = {
+          patient_id: savedPatientId,
+          intake_id: savedIntakeId,
+          branch: viewingBranch,
+          created_by: user.id,
+          pseudophakia: diagnosis.pseudophakia,
+          pseudophakia_laterality: diagnosis.pseudophakiaLaterality || null,
+          pseudophakia_iol_details: diagnosis.pseudophakiaIol || null,
+          cataract: diagnosis.cataract,
+          cataract_type: getCataractType() as any,
+          cataract_laterality: diagnosis.cataractLaterality || null,
+          pterygium: diagnosis.pterygium,
+          pterygium_laterality: diagnosis.pterygiumLaterality || null,
+          refraction_error: diagnosis.refractionError,
+          refraction_laterality: diagnosis.refractionLaterality || null,
+          refraction_notes: diagnosis.refractionNotes || null,
+          other_diagnosis: diagnosis.otherDiagnosis || null,
+          other_laterality: diagnosis.otherLaterality || null,
+        };
+
+        if (existingDiagnosis) {
+          const { error } = await supabase
+            .from('diagnoses')
+            .update(diagnosisData)
+            .eq('id', existingDiagnosis.id);
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('diagnoses')
+            .insert(diagnosisData);
+
+          if (error) throw error;
+        }
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Patient information saved successfully',
+      });
     } catch (error) {
       console.error('Error saving patient data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save patient information',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
