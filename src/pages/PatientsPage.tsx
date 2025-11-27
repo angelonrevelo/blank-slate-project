@@ -335,10 +335,10 @@ export function PatientsPage() {
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="px-8 py-4 border-b border-border bg-secondary">
+      <div className="px-6 md:px-8 py-6 border-b border-border bg-secondary">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-medium text-foreground">Patients</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold text-foreground">Patients</h1>
             <p className="text-sm text-muted-foreground mt-1">{viewingBranch} Branch</p>
           </div>
           

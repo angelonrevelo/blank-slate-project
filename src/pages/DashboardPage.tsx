@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
-import { Button, Modal, Input, LoadingSpinner, Badge } from '@/components/ui';
+import { Button, Modal, Input, LoadingSpinner, Badge, Select } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardStats {
@@ -271,14 +271,14 @@ export function DashboardPage() {
           
           <div className="flex items-center gap-4">
             {/* Branch Selector */}
-            <select
+            <Select
               value={viewingBranch}
               onChange={(e) => setViewingBranch(e.target.value)}
-              className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="Quezon City">Quezon City</option>
-              <option value="Tanauan City">Tanauan City</option>
-            </select>
+              options={[
+                { value: 'Quezon City', label: 'Quezon City' },
+                { value: 'Tanauan City', label: 'Tanauan City' },
+              ]}
+            />
           </div>
         </div>
       </header>
