@@ -13,7 +13,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user as User | null);
+        const authUser = session?.user as User | null;
+        setUser(authUser);
+        
+        // Sync user profile branch with viewingBranch
+        if (authUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('branch')
+            .eq('id', authUser.id)
+            .single();
+          
+          if (profile?.branch) {
+            // Update viewingBranch in localStorage to match profile
+            const stored = localStorage.getItem('vbe_viewingBranch');
+            if (!stored || stored === '"Quezon"' || stored === '"Tanauan"') {
+              localStorage.setItem('vbe_viewingBranch', JSON.stringify(profile.branch));
+              window.location.reload(); // Reload to apply the new branch
+            }
+          }
+        }
       } catch (error) {
         console.error('Error getting session:', error);
       } finally {
@@ -25,8 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user as User | null);
+      async (_event, session) => {
+        const authUser = session?.user as User | null;
+        setUser(authUser);
+        
+        // Sync user profile branch with viewingBranch on auth state change
+        if (authUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('branch')
+            .eq('id', authUser.id)
+            .single();
+          
+          if (profile?.branch) {
+            localStorage.setItem('vbe_viewingBranch', JSON.stringify(profile.branch));
+          }
+        }
+        
         setLoading(false);
       }
     );
