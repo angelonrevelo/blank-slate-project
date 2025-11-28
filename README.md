@@ -138,7 +138,7 @@ This repository mirrors the `vbeeyecenter` codebase. To sync changes:
 
 ## SMS Scheduler
 
-The SMS Scheduler is a backend script that runs as a scheduled job (cron) to send SMS messages to customers.
+The SMS Scheduler runs as a Lovable Cloud Edge Function triggered by a cron job to send SMS messages to customers.
 
 ### What It Does
 
@@ -147,33 +147,62 @@ The SMS Scheduler is a backend script that runs as a scheduled job (cron) to sen
 - Writes delivery logs into `sms_logs`
 - Updates `sms_schedules` status, retries, and `next_run_at` (supporting one-time and recurring schedules)
 
-### Environment Variables
+### Setup
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SUPABASE_URL` | Yes | - | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | - | Supabase service role key (admin access) |
-| `SEMAPHORE_API_KEY` | Yes | - | Semaphore SMS API key |
-| `SEMAPHORE_SENDER_NAME` | No | `SEMAPHORE` | Sender name for SMS messages |
-| `SCHEDULER_BATCH_SIZE` | No | `20` | Maximum number of schedules to process per run |
+1. **Add SEMAPHORE_API_KEY Secret**
+   - Go to Lovable Cloud backend → Secrets
+   - Add secret: `SEMAPHORE_API_KEY` with your API key from https://semaphore.co
 
-### Running Locally
+2. **Configure Cron Job**
+   - Enable `pg_cron` and `pg_net` extensions in Lovable Cloud backend
+   - Run this SQL to create the cron job:
 
-```bash
-# Set environment variables
-export SUPABASE_URL="https://your-project.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-export SEMAPHORE_API_KEY="your-semaphore-api-key"
-export SEMAPHORE_SENDER_NAME="MYAPP"  # optional
-export SCHEDULER_BATCH_SIZE="10"       # optional
-
-# Run the scheduler
-npm run run:sms-scheduler
+```sql
+select cron.schedule(
+  'sms-scheduler-every-5-minutes',
+  '*/5 * * * *', -- Every 5 minutes
+  $$
+  select
+    net.http_post(
+        url:='https://ybfnrvfcugqqwxwsnbdf.supabase.co/functions/v1/sms-scheduler',
+        headers:='{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InliZm5ydmZjdWdxcXd4d3NuYmRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxODk0NDIsImV4cCI6MjA3OTc2NTQ0Mn0.OLawBB2NeejcX26MlPjrhs4HfUfTknQ3LENQwfF6AE0"}'::jsonb,
+        body:='{}'::jsonb
+    ) as request_id;
+  $$
+);
 ```
 
-### Running in CI (Semaphore CI)
+### Environment Variables
 
-The scheduler is designed to run as a cron job in Semaphore CI. Configure the pipeline YAML and cron schedule separately in the Semaphore UI. Store secrets (API keys) as Semaphore secrets and inject them as environment variables.
+| Variable | Auto-Configured | Description |
+|----------|-----------------|-------------|
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (admin access) |
+| `SEMAPHORE_API_KEY` | **No** - Add via Secrets | Semaphore SMS API key |
+| `SEMAPHORE_SENDER_NAME` | Optional | Sender name for SMS messages (default: "SEMAPHORE") |
+| `SCHEDULER_BATCH_SIZE` | Optional | Maximum number of schedules to process per run (default: 20) |
+
+### Frontend Usage
+
+Use `src/lib/smsSchedulerClient.ts` to manage SMS schedules from your app:
+
+```typescript
+import { createCustomer, createSmsSchedule } from '@/lib/smsSchedulerClient';
+
+// Create a customer
+const customer = await createCustomer({
+  name: 'John Doe',
+  phoneNumber: '+639171234567',
+  timezone: 'Asia/Manila'
+});
+
+// Schedule a one-time SMS
+const schedule = await createSmsSchedule({
+  customerId: customer.id,
+  message: 'Your appointment is tomorrow at 10 AM',
+  firstRunAt: new Date('2025-01-15T09:00:00').toISOString()
+});
+```
 
 ## License
 
