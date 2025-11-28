@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Button, Input, Modal, LoadingSpinner, Badge, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui';
+import { Button, Input, Modal, Badge, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, ArrowUpDown, Eye, Download, Filter, X } from 'lucide-react';
@@ -472,8 +473,8 @@ export function PatientsPage() {
       {/* Patient Table */}
       <div className="flex-1 overflow-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="lg" />
+          <div className="px-8 py-6">
+            <SkeletonTable rows={10} />
           </div>
         ) : patients.length > 0 ? (
           <div className="px-8 py-6">

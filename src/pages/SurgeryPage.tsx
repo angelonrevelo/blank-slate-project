@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Input, LoadingSpinner } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { SurgeryDetailModal } from '@/components/SurgeryDetailModal';
 import { supabase } from '@/integrations/supabase/client';
+import { calculateWaitTime } from '@/lib/audio';
 import type { KanbanItem } from '@/components/KanbanBoard';
 
 export function SurgeryPage() {
@@ -96,20 +98,6 @@ export function SurgeryPage() {
     }
   };
 
-  const calculateElapsedTime = (startField: string, surgery: any) => {
-    const startTime = surgery[startField];
-    if (!startTime) return '';
-    
-    const start = new Date(startTime);
-    const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 60) return `${diffMins}m`;
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return `${hours}h ${mins}m`;
-  };
 
   const getStageStartField = (stage: string) => {
     switch (stage) {
@@ -133,7 +121,7 @@ export function SurgeryPage() {
     })
     .map(surgery => {
       const startField = getStageStartField(surgery.stage);
-      const elapsed = startField ? calculateElapsedTime(startField, surgery) : '';
+      const elapsed = startField && surgery[startField] ? calculateWaitTime(surgery[startField]) : '';
 
       return {
         id: surgery.id,
@@ -214,8 +202,16 @@ export function SurgeryPage() {
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="lg" />
+          <div className="p-6 h-full">
+            <div className="grid grid-cols-6 gap-4 h-full">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <KanbanBoard
