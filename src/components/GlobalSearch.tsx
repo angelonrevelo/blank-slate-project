@@ -91,7 +91,7 @@ export function GlobalSearch() {
             type: 'patient' as const,
             title: `${p.firstname} ${p.lastname}`,
             subtitle: `ID: ${p.patient_id}`,
-            link: `/information/${p.id}`,
+            link: `/information?patientId=${p.id}`,
           }))
         );
       }
