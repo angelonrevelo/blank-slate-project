@@ -14,6 +14,7 @@ import {
   SchedulingPage,
   SurgeryPage,
   SettingsPage,
+  SmsManagementPage,
 } from '@/pages';
 import StatusPage from '@/pages/StatusPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/surgery" element={<SurgeryPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/audit-logs" element={<AuditLogsPage />} />
+              <Route path="/sms-management" element={<SmsManagementPage />} />
             </Route>
 
             {/* Redirect root to loading */}

@@ -155,3 +155,80 @@ export async function getSmsLogs(params?: {
   if (error) throw error;
   return data as SmsLog[];
 }
+
+/**
+ * Get all SMS schedules for the current user
+ */
+export async function getSchedules(): Promise<SmsSchedule[]> {
+  const { data, error } = await supabase
+    .from('sms_schedules')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data as SmsSchedule[];
+}
+
+/**
+ * Update an SMS schedule
+ */
+export async function updateSchedule(
+  scheduleId: string,
+  updates: Partial<SmsSchedule>
+): Promise<SmsSchedule> {
+  const { data, error } = await supabase
+    .from('sms_schedules')
+    .update(updates)
+    .eq('id', scheduleId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SmsSchedule;
+}
+
+/**
+ * Delete an SMS schedule
+ */
+export async function deleteSchedule(scheduleId: string): Promise<void> {
+  const { error } = await supabase
+    .from('sms_schedules')
+    .delete()
+    .eq('id', scheduleId);
+
+  if (error) throw error;
+}
+
+/**
+ * Update a customer
+ */
+export async function updateCustomer(
+  customerId: string,
+  updates: {
+    name?: string;
+    phone_number?: string;
+    timezone?: string;
+  }
+): Promise<Customer> {
+  const { data, error } = await supabase
+    .from('customers')
+    .update(updates)
+    .eq('id', customerId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Customer;
+}
+
+/**
+ * Delete a customer
+ */
+export async function deleteCustomer(customerId: string): Promise<void> {
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', customerId);
+
+  if (error) throw error;
+}
