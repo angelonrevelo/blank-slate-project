@@ -24,6 +24,25 @@ export function LoginPage() {
   const [resetError, setResetError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
 
+  // Rate limiting state
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null);
+
+  // Check for existing lockout on mount
+  useState(() => {
+    const lockoutEnd = localStorage.getItem('loginLockoutEnd');
+    if (lockoutEnd) {
+      const end = parseInt(lockoutEnd);
+      if (Date.now() < end) {
+        setIsLocked(true);
+        setLockoutTime(end);
+      } else {
+        localStorage.removeItem('loginLockoutEnd');
+        localStorage.removeItem('loginAttempts');
+      }
+    }
+  });
+
   // Redirect if already logged in
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -32,6 +51,14 @@ export function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Check if locked out
+    if (isLocked && lockoutTime) {
+      const remaining = Math.ceil((lockoutTime - Date.now()) / 60000);
+      setError(`Too many failed attempts. Please try again in ${remaining} minute(s).`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -49,13 +76,34 @@ export function LoginPage() {
         }
         await signUp(email, password);
         setSignUpSuccess(true);
+        // Clear any failed attempts on successful signup
+        localStorage.removeItem('loginAttempts');
       } else {
         // Sign in mode
         await signIn(email, password);
+        // Clear failed attempts on successful login
+        localStorage.removeItem('loginAttempts');
+        localStorage.removeItem('loginLockoutEnd');
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : isSignUp ? 'Failed to sign up' : 'Failed to sign in');
+      const errorMessage = err instanceof Error ? err.message : isSignUp ? 'Failed to sign up' : 'Failed to sign in';
+      setError(errorMessage);
+
+      // Track failed login attempts (only for sign in)
+      if (!isSignUp) {
+        const attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
+        localStorage.setItem('loginAttempts', attempts.toString());
+
+        if (attempts >= 5) {
+          // Lock out for 15 minutes
+          const lockEnd = Date.now() + 15 * 60 * 1000;
+          localStorage.setItem('loginLockoutEnd', lockEnd.toString());
+          setIsLocked(true);
+          setLockoutTime(lockEnd);
+          setError('Too many failed attempts. Account locked for 15 minutes.');
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -32,6 +32,8 @@ export function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20); // Default from user preferences
   
   // Filter states
   const [stageFilter, setStageFilter] = useState<string[]>([]);
@@ -308,6 +310,17 @@ export function PatientsPage() {
     setDoctorFilter('all');
     setGenderFilter('all');
     setSearchQuery('');
+    setCurrentPage(1);
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(patients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPatients = patients.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   const activeFilterCount = stageFilter.length + statusFilter.length + 
@@ -478,8 +491,8 @@ export function PatientsPage() {
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {patients.map((patient) => (
+            <TableBody>
+              {paginatedPatients.map((patient) => (
                   <TableRow 
                     key={patient.id}
                     className="cursor-pointer hover:bg-secondary/50"
@@ -517,10 +530,60 @@ export function PatientsPage() {
                 ))}
               </TableBody>
             </Table>
-            
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <p>Showing {patients.length} patient{patients.length !== 1 ? 's' : ''}</p>
-            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1}-{Math.min(endIndex, patients.length)} of {patients.length} patients
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`px-3 py-1 rounded text-sm transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-primary text-primary-foreground font-medium'
+                              : 'text-muted-foreground hover:bg-secondary'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
