@@ -4,6 +4,7 @@ export { Checkbox } from './Checkbox';
 export { Modal } from './Modal';
 export { ConfirmDialog } from './ConfirmDialog';
 export { LoadingSpinner } from './LoadingSpinner';
+export { Skeleton, SkeletonCard, SkeletonTable } from './Skeleton';
 export { Badge } from './Badge';
 export { Avatar, AvatarImage, AvatarFallback } from './Avatar';
 export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from './Table';

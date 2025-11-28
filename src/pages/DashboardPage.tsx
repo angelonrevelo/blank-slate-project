@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
-import { Button, Modal, Input, LoadingSpinner, Badge, Select } from '@/components/ui';
+import { Button, Modal, Input, Badge, Select } from '@/components/ui';
+import { Skeleton, SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { calculateWaitTime } from '@/lib/audio';
 
 interface DashboardStats {
   todaysPatients: number;
@@ -53,10 +55,45 @@ export function DashboardPage() {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedSurgery, setSelectedSurgery] = useState<Surgery | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
+    loadAutoRefreshPreference();
   }, [user, viewingBranch]);
+
+  useEffect(() => {
+    if (autoRefreshEnabled) {
+      refreshInterval.current = setInterval(() => {
+        fetchDashboardData();
+      }, 30000); // Refresh every 30 seconds
+    } else if (refreshInterval.current) {
+      clearInterval(refreshInterval.current);
+      refreshInterval.current = null;
+    }
+
+    return () => {
+      if (refreshInterval.current) {
+        clearInterval(refreshInterval.current);
+      }
+    };
+  }, [autoRefreshEnabled]);
+
+  const loadAutoRefreshPreference = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_preferences')
+      .eq('id', user.id)
+      .single();
+
+    const preferences = data?.user_preferences as any;
+    if (preferences?.general?.autoRefresh !== undefined) {
+      setAutoRefreshEnabled(preferences.general.autoRefresh);
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -155,19 +192,16 @@ export function DashboardPage() {
       });
 
       // Transform assignments data
-      const assignmentsFormatted: Assignment[] = intakesData?.map((intake: any) => {
-        const waitTime = calculateWaitTime(intake.created_at);
-        return {
-          id: intake.id,
-          patient_name: `${intake.patients.lastname}, ${intake.patients.firstname}`,
-          patient_id: intake.patients.patient_id,
-          assigned_to: intake.profiles
-            ? `${intake.profiles.lastname}, ${intake.profiles.firstname}`
-            : 'Unassigned',
-          stage: intake.stage || 'file',
-          wait_time: waitTime,
-        };
-      }) || [];
+      const assignmentsFormatted: Assignment[] = intakesData?.map((intake: any) => ({
+        id: intake.id,
+        patient_name: `${intake.patients.lastname}, ${intake.patients.firstname}`,
+        patient_id: intake.patients.patient_id,
+        assigned_to: intake.profiles
+          ? `${intake.profiles.lastname}, ${intake.profiles.firstname}`
+          : 'Unassigned',
+        stage: intake.stage || 'file',
+        wait_time: calculateWaitTime(intake.created_at),
+      })) || [];
       setAssignments(assignmentsFormatted);
 
       // Transform surgeries data
@@ -195,19 +229,6 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateWaitTime = (createdAt: string): string => {
-    const created = new Date(createdAt);
-    const now = new Date();
-    const diffMs = now.getTime() - created.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 60) return `${diffMins}m`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d`;
   };
 
   const handleReschedule = async () => {
@@ -249,8 +270,22 @@ export function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="h-full flex flex-col">
+        <header className="bg-secondary px-6 md:px-8 py-6 border-b border-border">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </header>
+        <div className="flex-1 p-6 md:p-8 overflow-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <div className="mb-8">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <SkeletonTable rows={3} />
+          </div>
+        </div>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Bell, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/DropdownMenu';
 import { cn } from '@/lib/utils';
+import { playNotificationSound } from '@/lib/audio';
 
 interface Notification {
   id: string;
@@ -20,10 +21,13 @@ interface Notification {
 export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const navigate = useNavigate();
+  const previousUnreadCount = useRef(0);
 
   useEffect(() => {
     fetchNotifications();
+    loadSoundPreference();
     
     // Subscribe to realtime updates
     const channel = supabase
@@ -31,7 +35,7 @@ export function NotificationDropdown() {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
         },
@@ -45,6 +49,30 @@ export function NotificationDropdown() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Play sound when new notifications arrive
+  useEffect(() => {
+    if (unreadCount > previousUnreadCount.current && soundEnabled && previousUnreadCount.current > 0) {
+      playNotificationSound();
+    }
+    previousUnreadCount.current = unreadCount;
+  }, [unreadCount, soundEnabled]);
+
+  const loadSoundPreference = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_preferences')
+      .eq('id', user.id)
+      .single();
+
+    const preferences = data?.user_preferences as any;
+    if (preferences?.notifications?.soundAlerts !== undefined) {
+      setSoundEnabled(preferences.notifications.soundAlerts);
+    }
+  };
 
   const fetchNotifications = async () => {
     const { data: { user } } = await supabase.auth.getUser();
