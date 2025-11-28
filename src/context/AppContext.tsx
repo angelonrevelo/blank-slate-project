@@ -16,11 +16,11 @@ const defaultState = {
   userSignatureLink: '',
   infoTab: 'BasicInfo',
   patientSort: 'DATE_DESC',
-  loginBranch: 'Quezon',
+  loginBranch: 'VBE Eye Center - Quezon City',
   clearanceTab: 'Clearance',
   viewSetting: 'ViewMyTasks',
   recoverSession: false,
-  viewingBranch: 'Quezon',
+  viewingBranch: 'VBE Eye Center - Quezon City',
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
