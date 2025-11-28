@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { Button, Input, Modal, Badge, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -24,6 +24,7 @@ type Patient = {
 
 export function PatientsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { patientSort, setPatientSort, viewingBranch } = useAppState();
   const { toast } = useToast();
   
@@ -51,6 +52,14 @@ export function PatientsPage() {
     contact_number: '',
     address: '',
   });
+
+  // Handle URL search parameter on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   const stageOptions = [
     { value: 'new', label: 'New', variant: 'new' as const },

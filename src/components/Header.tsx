@@ -2,6 +2,7 @@ import { Search, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +17,18 @@ import { NotificationDropdown } from '@/components/NotificationDropdown';
 export function Header() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/patients?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   const getInitials = () => {
@@ -31,14 +40,16 @@ export function Header() {
     <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6 flex-shrink-0">
       {/* Search Bar */}
       <div className="flex-1 max-w-xl">
-        <div className="relative">
+        <form onSubmit={handleSearch} className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
             type="text"
-            placeholder="Search patients, appointments... (Cmd+K)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search patients... (Press Enter)"
             className="w-full pl-10 pr-4 py-2 bg-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-transparent transition-all"
           />
-        </div>
+        </form>
       </div>
 
       {/* Right Section */}
