@@ -147,10 +147,9 @@ export function GlobalSearch() {
   const handleResultClick = (link: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Navigating to:', link);
+    navigate(link);
     setIsOpen(false);
     setSearchQuery('');
-    navigate(link);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
