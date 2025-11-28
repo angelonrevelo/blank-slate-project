@@ -10,3 +10,4 @@ export { SchedulingPage } from './SchedulingPage';
 export { SurgeryPage } from './SurgeryPage';
 export { SettingsPage } from './SettingsPage';
 export { default as AuditLogsPage } from './AuditLogsPage';
+export { default as SmsManagementPage } from './SmsManagementPage';
