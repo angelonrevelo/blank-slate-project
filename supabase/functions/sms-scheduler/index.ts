@@ -96,27 +96,38 @@ async function sendSms(
   senderName: string
 ): Promise<SemaphoreResponse> {
   const url = 'https://api.semaphore.co/api/v4/messages';
-  const payload = {
+  
+  // Use form-urlencoded format as per Semaphore API docs
+  const params = new URLSearchParams({
     apikey: apiKey,
     number: phoneNumber,
     message: message,
     sendername: senderName,
-  };
+  });
 
   console.log(`[sendSms] Sending to ${phoneNumber}`);
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   });
 
+  const responseText = await response.text();
+  console.log(`[sendSms] Response status: ${response.status}, body: ${responseText}`);
+
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Semaphore API error: ${response.status} ${text}`);
+    throw new Error(`Semaphore API error: ${response.status} ${responseText}`);
   }
 
-  return await response.json();
+  const responseData = JSON.parse(responseText);
+  
+  // Semaphore returns an array, extract first element
+  if (Array.isArray(responseData) && responseData.length > 0) {
+    return responseData[0];
+  }
+  
+  return responseData;
 }
 
 async function logFailure(
