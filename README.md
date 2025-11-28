@@ -136,6 +136,45 @@ This repository mirrors the `vbeeyecenter` codebase. To sync changes:
 3. Run linting and tests
 4. Submit a pull request
 
+## SMS Scheduler
+
+The SMS Scheduler is a backend script that runs as a scheduled job (cron) to send SMS messages to customers.
+
+### What It Does
+
+- Queries `sms_schedules` for due messages (status = 'scheduled', is_active = true, next_run_at <= now)
+- Sends messages via [Semaphore SMS API](https://semaphore.co)
+- Writes delivery logs into `sms_logs`
+- Updates `sms_schedules` status, retries, and `next_run_at` (supporting one-time and recurring schedules)
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SUPABASE_URL` | Yes | - | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | - | Supabase service role key (admin access) |
+| `SEMAPHORE_API_KEY` | Yes | - | Semaphore SMS API key |
+| `SEMAPHORE_SENDER_NAME` | No | `SEMAPHORE` | Sender name for SMS messages |
+| `SCHEDULER_BATCH_SIZE` | No | `20` | Maximum number of schedules to process per run |
+
+### Running Locally
+
+```bash
+# Set environment variables
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+export SEMAPHORE_API_KEY="your-semaphore-api-key"
+export SEMAPHORE_SENDER_NAME="MYAPP"  # optional
+export SCHEDULER_BATCH_SIZE="10"       # optional
+
+# Run the scheduler
+npm run run:sms-scheduler
+```
+
+### Running in CI (Semaphore CI)
+
+The scheduler is designed to run as a cron job in Semaphore CI. Configure the pipeline YAML and cron schedule separately in the Semaphore UI. Store secrets (API keys) as Semaphore secrets and inject them as environment variables.
+
 ## License
 
 Private - VBE Eye Center
