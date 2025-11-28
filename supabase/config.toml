@@ -1,1 +1,4 @@
 project_id = "ybfnrvfcugqqwxwsnbdf"
+
+[functions.sms-scheduler]
+verify_jwt = false
