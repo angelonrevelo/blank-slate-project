@@ -48,20 +48,45 @@ export function GlobalSearch() {
   const performSearch = async () => {
     setLoading(true);
     const search = searchQuery.toLowerCase();
-    const allResults: SearchResult[] = [];
 
     try {
-      // Search patients
-      const { data: patients } = await supabase
-        .from('patients')
-        .select('id, patient_id, firstname, lastname, contact_number')
-        .eq('branch', viewingBranch)
-        .or(`firstname.ilike.%${search}%,lastname.ilike.%${search}%,patient_id.ilike.%${search}%,contact_number.ilike.%${search}%`)
-        .limit(5);
+      // Run all queries in parallel for faster results
+      const [patientsRes, surgeriesRes, intakesRes, schedulesRes] = await Promise.all([
+        supabase
+          .from('patients')
+          .select('id, patient_id, firstname, lastname, contact_number')
+          .eq('branch', viewingBranch)
+          .or(`firstname.ilike.%${search}%,lastname.ilike.%${search}%,patient_id.ilike.%${search}%,contact_number.ilike.%${search}%`)
+          .limit(5),
+        
+        supabase
+          .from('surgeries')
+          .select('id, scheduled_date, scheduled_time, procedure, patients!inner(firstname, lastname, patient_id)')
+          .eq('branch', viewingBranch)
+          .or(`procedure.ilike.%${search}%`)
+          .limit(5),
+        
+        supabase
+          .from('intakes')
+          .select('id, stage, created_at, patients!inner(firstname, lastname, patient_id)')
+          .eq('branch', viewingBranch)
+          .eq('in_progress', true)
+          .limit(5),
+        
+        supabase
+          .from('schedules')
+          .select('id, scheduled_date, scheduled_time, procedure_type, patients!inner(firstname, lastname)')
+          .eq('branch', viewingBranch)
+          .or(`procedure_type.ilike.%${search}%`)
+          .limit(5)
+      ]);
 
-      if (patients) {
+      const allResults: SearchResult[] = [];
+
+      // Process patients
+      if (patientsRes.data) {
         allResults.push(
-          ...patients.map((p) => ({
+          ...patientsRes.data.map((p) => ({
             id: p.id,
             type: 'patient' as const,
             title: `${p.firstname} ${p.lastname}`,
@@ -71,17 +96,10 @@ export function GlobalSearch() {
         );
       }
 
-      // Search surgeries
-      const { data: surgeries } = await supabase
-        .from('surgeries')
-        .select('id, scheduled_date, scheduled_time, procedure, patients!inner(firstname, lastname, patient_id)')
-        .eq('branch', viewingBranch)
-        .or(`procedure.ilike.%${search}%`)
-        .limit(5);
-
-      if (surgeries) {
+      // Process surgeries
+      if (surgeriesRes.data) {
         allResults.push(
-          ...surgeries.map((s: any) => ({
+          ...surgeriesRes.data.map((s: any) => ({
             id: s.id,
             type: 'surgery' as const,
             title: `${s.procedure} - ${s.patients.firstname} ${s.patients.lastname}`,
@@ -91,17 +109,10 @@ export function GlobalSearch() {
         );
       }
 
-      // Search intakes
-      const { data: intakes } = await supabase
-        .from('intakes')
-        .select('id, stage, created_at, patients!inner(firstname, lastname, patient_id)')
-        .eq('branch', viewingBranch)
-        .eq('in_progress', true)
-        .limit(5);
-
-      if (intakes) {
+      // Process intakes
+      if (intakesRes.data) {
         allResults.push(
-          ...intakes.map((i: any) => ({
+          ...intakesRes.data.map((i: any) => ({
             id: i.id,
             type: 'intake' as const,
             title: `${i.patients.firstname} ${i.patients.lastname} - ${i.stage}`,
@@ -111,17 +122,10 @@ export function GlobalSearch() {
         );
       }
 
-      // Search schedules
-      const { data: schedules } = await supabase
-        .from('schedules')
-        .select('id, scheduled_date, scheduled_time, procedure_type, patients!inner(firstname, lastname)')
-        .eq('branch', viewingBranch)
-        .or(`procedure_type.ilike.%${search}%`)
-        .limit(5);
-
-      if (schedules) {
+      // Process schedules
+      if (schedulesRes.data) {
         allResults.push(
-          ...schedules.map((s: any) => ({
+          ...schedulesRes.data.map((s: any) => ({
             id: s.id,
             type: 'schedule' as const,
             title: `${s.procedure_type} - ${s.patients.firstname} ${s.patients.lastname}`,
