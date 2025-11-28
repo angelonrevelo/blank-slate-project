@@ -115,6 +115,12 @@ export function PatientsPage() {
         `)
         .eq('branch', viewingBranch);
 
+      // Apply search filter at database level for better performance
+      if (searchQuery) {
+        const search = searchQuery.toLowerCase();
+        query = query.or(`firstname.ilike.%${search}%,lastname.ilike.%${search}%,patient_id.ilike.%${search}%,contact_number.ilike.%${search}%`);
+      }
+
       // Apply stage filter
       if (stageFilter.length > 0) {
         query = query.in('stage', stageFilter as any);
@@ -150,16 +156,6 @@ export function PatientsPage() {
       if (error) throw error;
 
       let filteredPatients = data || [];
-
-      // Apply search filter
-      if (searchQuery) {
-        filteredPatients = filteredPatients.filter(p => {
-          const patientId = p.patient_id ?? '';
-          const name = `${p.firstname} ${p.lastname}`.toLowerCase();
-          const search = searchQuery.toLowerCase();
-          return name.includes(search) || patientId.toLowerCase().includes(search);
-        });
-      }
 
       // Apply doctor filter (based on most recent intake)
       if (doctorFilter !== 'all') {
