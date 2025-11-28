@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Button, LoadingSpinner } from '@/components/ui';
+import { Modal, Button } from '@/components/ui';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +16,7 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
   const [loading, setLoading] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   if (!surgery) return null;
 
@@ -79,7 +81,7 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancelClick = () => {
     if (!cancelReason.trim()) {
       toast({
         title: 'Reason Required',
@@ -88,7 +90,10 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
       });
       return;
     }
+    setShowConfirmDialog(true);
+  };
 
+  const handleConfirmCancel = async () => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -108,6 +113,7 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
         description: 'Surgery cancelled',
       });
 
+      setShowConfirmDialog(false);
       onUpdate();
       onClose();
     } catch (error) {
@@ -301,8 +307,8 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
               />
             </div>
             <div className="flex gap-3">
-              <Button onClick={handleCancel} disabled={loading} variant="danger">
-                {loading ? <LoadingSpinner size="sm" /> : 'Confirm Cancellation'}
+              <Button onClick={handleCancelClick} disabled={loading} variant="danger">
+                Cancel Surgery
               </Button>
               <Button variant="outline" onClick={() => setShowCancelInput(false)}>
                 Back
@@ -310,6 +316,19 @@ export function SurgeryDetailModal({ isOpen, onClose, surgery, onUpdate }: Surge
             </div>
           </div>
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showConfirmDialog}
+          onClose={() => setShowConfirmDialog(false)}
+          onConfirm={handleConfirmCancel}
+          title="Confirm Cancellation"
+          message="Are you sure you want to cancel this surgery? This action cannot be undone."
+          confirmText="Yes, Cancel Surgery"
+          cancelText="No, Keep Surgery"
+          variant="danger"
+          loading={loading}
+        />
       </div>
     </Modal>
   );

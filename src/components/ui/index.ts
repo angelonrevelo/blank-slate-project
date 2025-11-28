@@ -2,6 +2,7 @@ export { Button } from './Button';
 export { Input } from './Input';
 export { Checkbox } from './Checkbox';
 export { Modal } from './Modal';
+export { ConfirmDialog } from './ConfirmDialog';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Badge } from './Badge';
 export { Avatar, AvatarImage, AvatarFallback } from './Avatar';
