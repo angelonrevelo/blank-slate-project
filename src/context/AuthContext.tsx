@@ -26,10 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (profile?.branch) {
             // Update viewingBranch in localStorage to match profile
+            // Migrate old short names to full names
             const stored = localStorage.getItem('vbe_viewingBranch');
             if (!stored || stored === '"Quezon"' || stored === '"Tanauan"') {
               localStorage.setItem('vbe_viewingBranch', JSON.stringify(profile.branch));
-              window.location.reload(); // Reload to apply the new branch
             }
           }
         }
