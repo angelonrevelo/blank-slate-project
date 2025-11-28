@@ -144,16 +144,20 @@ export function GlobalSearch() {
     }
   };
 
-  const handleResultClick = (link: string) => {
-    navigate(link);
+  const handleResultClick = (link: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsOpen(false);
     setSearchQuery('');
+    navigate(link);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (results.length > 0) {
-      handleResultClick(results[0].link);
+      setIsOpen(false);
+      setSearchQuery('');
+      navigate(results[0].link);
     }
   };
 
@@ -204,7 +208,8 @@ export function GlobalSearch() {
               {results.map((result) => (
                 <button
                   key={`${result.type}-${result.id}`}
-                  onClick={() => handleResultClick(result.link)}
+                  type="button"
+                  onClick={(e) => handleResultClick(result.link, e)}
                   className="w-full px-4 py-3 hover:bg-secondary transition-colors flex items-center gap-3 text-left"
                 >
                   <div className="flex-shrink-0">{getIcon(result.type)}</div>
