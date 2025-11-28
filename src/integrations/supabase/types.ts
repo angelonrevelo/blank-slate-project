@@ -131,6 +131,39 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          name: string
+          phone_number: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          phone_number: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          phone_number?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diagnoses: {
         Row: {
           branch: string
@@ -1052,6 +1085,183 @@ export type Database = {
           },
         ]
       }
+      sms_logs: {
+        Row: {
+          created_at: string
+          customer_id: string
+          error_message: string | null
+          id: string
+          message_body: string
+          provider_message_id: string | null
+          provider_name: string
+          request_payload: Json | null
+          response_payload: Json | null
+          schedule_id: string | null
+          sent_at: string
+          status: Database["public"]["Enums"]["sms_log_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          error_message?: string | null
+          id?: string
+          message_body: string
+          provider_message_id?: string | null
+          provider_name?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          schedule_id?: string | null
+          sent_at?: string
+          status: Database["public"]["Enums"]["sms_log_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          error_message?: string | null
+          id?: string
+          message_body?: string
+          provider_message_id?: string | null
+          provider_name?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          schedule_id?: string | null
+          sent_at?: string
+          status?: Database["public"]["Enums"]["sms_log_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sms_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_schedules: {
+        Row: {
+          created_at: string
+          current_retry: number
+          customer_id: string
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_run_at: string | null
+          max_retries: number
+          message_body: string | null
+          next_run_at: string
+          recurrence_days_of_week: number[] | null
+          recurrence_end_at: string | null
+          recurrence_frequency:
+            | Database["public"]["Enums"]["recurrence_frequency"]
+            | null
+          recurrence_interval: number | null
+          schedule_type: Database["public"]["Enums"]["sms_schedule_type"]
+          status: Database["public"]["Enums"]["sms_schedule_status"]
+          template_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_retry?: number
+          customer_id: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          max_retries?: number
+          message_body?: string | null
+          next_run_at: string
+          recurrence_days_of_week?: number[] | null
+          recurrence_end_at?: string | null
+          recurrence_frequency?:
+            | Database["public"]["Enums"]["recurrence_frequency"]
+            | null
+          recurrence_interval?: number | null
+          schedule_type?: Database["public"]["Enums"]["sms_schedule_type"]
+          status?: Database["public"]["Enums"]["sms_schedule_status"]
+          template_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_retry?: number
+          customer_id?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          max_retries?: number
+          message_body?: string | null
+          next_run_at?: string
+          recurrence_days_of_week?: number[] | null
+          recurrence_end_at?: string | null
+          recurrence_frequency?:
+            | Database["public"]["Enums"]["recurrence_frequency"]
+            | null
+          recurrence_interval?: number | null
+          schedule_type?: Database["public"]["Enums"]["sms_schedule_type"]
+          status?: Database["public"]["Enums"]["sms_schedule_status"]
+          template_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_schedules_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_schedules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "sms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       surgeries: {
         Row: {
           active: boolean | null
@@ -1285,7 +1495,17 @@ export type Database = {
         | "none"
       patient_status: "Active" | "Inactive"
       philhealth_category_type: "Member" | "Dependent" | "Indigent" | "Senior"
+      recurrence_frequency: "daily" | "weekly" | "monthly"
       schedule_status: "Scheduled" | "Completed" | "Cancelled"
+      sms_log_status: "success" | "failed"
+      sms_schedule_status:
+        | "pending"
+        | "scheduled"
+        | "sending"
+        | "sent"
+        | "failed"
+        | "cancelled"
+      sms_schedule_type: "one_time" | "recurring"
       surgery_stage:
         | "scheduled"
         | "waiting"
@@ -1490,7 +1710,18 @@ export const Constants = {
       ],
       patient_status: ["Active", "Inactive"],
       philhealth_category_type: ["Member", "Dependent", "Indigent", "Senior"],
+      recurrence_frequency: ["daily", "weekly", "monthly"],
       schedule_status: ["Scheduled", "Completed", "Cancelled"],
+      sms_log_status: ["success", "failed"],
+      sms_schedule_status: [
+        "pending",
+        "scheduled",
+        "sending",
+        "sent",
+        "failed",
+        "cancelled",
+      ],
+      sms_schedule_type: ["one_time", "recurring"],
       surgery_stage: [
         "scheduled",
         "waiting",
