@@ -44,24 +44,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         const authUser = session?.user as User | null;
         setUser(authUser);
-        
-        // Sync user profile branch with viewingBranch on auth state change
-        if (authUser) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('branch')
-            .eq('id', authUser.id)
-            .single();
-          
-          if (profile?.branch) {
-            localStorage.setItem('vbe_viewingBranch', JSON.stringify(profile.branch));
-          }
-        }
-        
         setLoading(false);
+        
+        // Defer profile sync to avoid deadlock
+        if (authUser) {
+          setTimeout(async () => {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('branch')
+                .eq('id', authUser.id)
+                .single();
+              
+              if (profile?.branch) {
+                localStorage.setItem('vbe_viewingBranch', JSON.stringify(profile.branch));
+              }
+            } catch (err) {
+              console.error('Error syncing branch:', err);
+            }
+          }, 0);
+        }
       }
     );
 
