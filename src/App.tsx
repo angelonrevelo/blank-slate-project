@@ -16,6 +16,7 @@ import {
   SettingsPage,
 } from '@/pages';
 import StatusPage from '@/pages/StatusPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
               <Route path="/scheduling" element={<SchedulingPage />} />
               <Route path="/surgery" element={<SurgeryPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/audit-logs" element={<AuditLogsPage />} />
             </Route>
 
             {/* Redirect root to loading */}

@@ -1,0 +1,10 @@
+export { InfoHistoryTab } from './InfoHistoryTab';
+export { VisualAcuityTab } from './VisualAcuityTab';
+export { AnteriorSegmentTab } from './AnteriorSegmentTab';
+export { SlitLampTab } from './SlitLampTab';
+export { FundusTab } from './FundusTab';
+export { DiagnosisTab } from './DiagnosisTab';
+export { BiometryTab } from './BiometryTab';
+export { ClearanceTab } from './ClearanceTab';
+export { TreatmentPlanTab } from './TreatmentPlanTab';
+export * from './types';
