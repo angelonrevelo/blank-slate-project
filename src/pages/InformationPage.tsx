@@ -954,7 +954,6 @@ export function InformationPage() {
 
       {/* Tab Content */}
       <div className="flex-1 p-6 md:p-8 overflow-auto">
-        <div className="max-w-6xl mx-auto">
           {/* INFO & HISTORY Tab */}
           {activeTab === 'InfoHistory' && (
             <div className="space-y-4">
@@ -1964,7 +1963,6 @@ export function InformationPage() {
               </div>
             </div>
           )}
-        </div>
       </div>
 
       {/* Footer with Navigation Buttons */}
