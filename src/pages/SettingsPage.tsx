@@ -104,7 +104,7 @@ export function SettingsPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
-        <div className="max-w-3xl space-y-6">
+        <div className="space-y-6">
           {/* General Settings */}
           <div className="bg-card rounded-xl border border-border shadow-sm p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">General Settings</h2>
