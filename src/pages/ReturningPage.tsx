@@ -189,12 +189,14 @@ export function ReturningPage() {
             <LoadingSpinner size="lg" />
           </div>
         ) : (
-          <KanbanBoard
-            columns={kanbanColumns}
-            items={kanbanItems}
-            onCardClick={handleCardClick}
-            onSearch={setSearchQuery}
-          />
+          <div className="h-full overflow-auto p-6 md:p-8">
+            <KanbanBoard
+              columns={kanbanColumns}
+              items={kanbanItems}
+              onCardClick={handleCardClick}
+              onSearch={setSearchQuery}
+            />
+          </div>
         )}
       </div>
 
