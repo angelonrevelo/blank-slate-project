@@ -130,44 +130,55 @@ export function AccountPage() {
 
     setIsSavingSignature(true);
     try {
-      // Convert data URL to blob
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
+      // Default to storing the data URL directly so saving always works
+      let signatureUrlToStore = dataUrl;
 
-      // Upload to storage
-      const fileName = `${user.id}-${Date.now()}.png`;
-      const { error: uploadError } = await supabase.storage
-        .from('patient-documents')
-        .upload(`signatures/${fileName}`, blob, {
-          contentType: 'image/png',
-          upsert: true,
-        });
+      // Try to upload to storage, but fall back gracefully if it fails
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
 
-      if (uploadError) throw uploadError;
+        const fileName = `${user.id}-${Date.now()}.png`;
+        const { error: uploadError } = await supabase.storage
+          .from('patient-documents')
+          .upload(`signatures/${fileName}`, blob, {
+            contentType: 'image/png',
+            upsert: true,
+          });
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('patient-documents')
-        .getPublicUrl(`signatures/${fileName}`);
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('patient-documents')
+            .getPublicUrl(`signatures/${fileName}`);
 
-      // Update profile
+          if (urlData?.publicUrl) {
+            signatureUrlToStore = urlData.publicUrl;
+          }
+        } else {
+          console.error('Signature upload failed, falling back to inline data URL', uploadError);
+        }
+      } catch (storageError) {
+        console.error('Signature storage error, falling back to inline data URL', storageError);
+      }
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          signature_link: urlData.publicUrl,
+          signature_link: signatureUrlToStore,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      setSignature(urlData.publicUrl);
+      setSignature(signatureUrlToStore);
       toast({
         title: 'Success',
         description: 'Signature updated successfully',
       });
       setShowSignatureModal(false);
     } catch (error) {
+      console.error('Failed to save signature', error);
       toast({
         title: 'Error',
         description: 'Failed to save signature',
@@ -177,7 +188,6 @@ export function AccountPage() {
       setIsSavingSignature(false);
     }
   };
-
   const handleSavePreferences = async () => {
     setIsSavingPreferences(true);
     try {
