@@ -130,48 +130,18 @@ export function AccountPage() {
 
     setIsSavingSignature(true);
     try {
-      // Default to storing the data URL directly so saving always works
-      let signatureUrlToStore = dataUrl;
-
-      // Try to upload to storage, but fall back gracefully if it fails
-      try {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-
-        const fileName = `${user.id}-${Date.now()}.png`;
-        const { error: uploadError } = await supabase.storage
-          .from('patient-documents')
-          .upload(`signatures/${fileName}`, blob, {
-            contentType: 'image/png',
-            upsert: true,
-          });
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
-            .from('patient-documents')
-            .getPublicUrl(`signatures/${fileName}`);
-
-          if (urlData?.publicUrl) {
-            signatureUrlToStore = urlData.publicUrl;
-          }
-        } else {
-          console.error('Signature upload failed, falling back to inline data URL', uploadError);
-        }
-      } catch (storageError) {
-        console.error('Signature storage error, falling back to inline data URL', storageError);
-      }
-
+      // Store signature directly as a data URL so it always overwrites reliably
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          signature_link: signatureUrlToStore,
+          signature_link: dataUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      setSignature(signatureUrlToStore);
+      setSignature(dataUrl);
       toast({
         title: 'Success',
         description: 'Signature updated successfully',
@@ -188,10 +158,10 @@ export function AccountPage() {
       setIsSavingSignature(false);
     }
   };
+
   const handleSavePreferences = async () => {
     setIsSavingPreferences(true);
     try {
-      // Store preferences in localStorage for now
       localStorage.setItem('userPreferences', JSON.stringify({
         emailNotifications,
         soundAlerts,
@@ -203,6 +173,7 @@ export function AccountPage() {
         description: 'Preferences saved successfully',
       });
     } catch (error) {
+      console.error('Failed to save preferences', error);
       toast({
         title: 'Error',
         description: 'Failed to save preferences',
