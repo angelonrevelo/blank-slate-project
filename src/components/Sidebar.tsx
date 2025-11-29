@@ -131,7 +131,7 @@ export function Sidebar({ currentPage }: SidebarProps) {
   if (shrinkBar) return null;
 
   return (
-    <aside className={`flex flex-col bg-primary h-screen flex-shrink-0 transition-all duration-300 relative ${collapsed ? 'w-16' : 'w-64'}`}>
+    <aside className={`hidden md:flex flex-col bg-primary h-screen flex-shrink-0 transition-all duration-300 relative ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
