@@ -268,7 +268,7 @@ export function AccountPage() {
 
       {/* Main Content */}
       <div className="flex-1 p-6 md:p-8 overflow-auto">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="space-y-6">
           {/* Profile Card */}
           <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
             <div className="flex items-center justify-between mb-4">
