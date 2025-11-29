@@ -321,13 +321,13 @@ export function DashboardPage() {
       {/* Main Content */}
       <div className="flex-1 p-6 md:p-8 overflow-auto">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <StatsCard
             title="Today's Patients"
             value={stats.todaysPatients}
             subtitle="Total intakes today"
             icon={
-              <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
             }
@@ -338,7 +338,7 @@ export function DashboardPage() {
             value={stats.newPatients}
             subtitle="In file stage"
             icon={
-              <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
             }
@@ -349,7 +349,7 @@ export function DashboardPage() {
             value={stats.followups}
             subtitle="Pending visits"
             icon={
-              <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
               </svg>
             }
@@ -360,7 +360,7 @@ export function DashboardPage() {
             value={stats.surgeries}
             subtitle="Upcoming surgeries"
             icon={
-              <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M9.17 6l2 2H20v10H4V6h5.17M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
               </svg>
             }
@@ -368,7 +368,7 @@ export function DashboardPage() {
         </div>
 
         {/* Patients Assigned Today */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">Patients Assigned Today</h2>
             <Button
@@ -424,7 +424,7 @@ export function DashboardPage() {
         </div>
 
         {/* Surgery Board */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">Today's Surgery Board</h2>
             <Button
@@ -592,17 +592,17 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, subtitle, icon }: StatsCardProps) {
   return (
-    <div className="bg-background border border-border rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+          <p className="text-sm text-muted-foreground mb-0.5">{title}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
         {icon && (
-          <div className="p-3 bg-muted rounded-lg">{icon}</div>
+          <div className="p-2 bg-muted rounded-lg">{icon}</div>
         )}
       </div>
     </div>
