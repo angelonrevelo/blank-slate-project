@@ -159,6 +159,39 @@ export function AccountPage() {
     }
   };
 
+  const handleClearSignature = async () => {
+    if (!user?.id) return;
+
+    setIsSavingSignature(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          signature_link: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setSignature('');
+      toast({
+        title: 'Success',
+        description: 'Signature cleared successfully',
+      });
+      setShowSignatureModal(false);
+    } catch (error) {
+      console.error('Failed to clear signature', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to clear signature',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
   const handleSavePreferences = async () => {
     setIsSavingPreferences(true);
     try {
@@ -549,6 +582,7 @@ export function AccountPage() {
         ) : (
           <SignaturePad
             onSave={handleSaveSignature}
+            onClear={handleClearSignature}
             initialSignature={signature}
           />
         )}
