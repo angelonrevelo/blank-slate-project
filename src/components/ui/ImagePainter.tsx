@@ -1,5 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from './Button';
+import { Check } from 'lucide-react';
 
 interface ImagePainterProps {
   width?: number;
@@ -33,6 +34,8 @@ export function ImagePainter({
   const [brushSize, setBrushSize] = useState(3);
   const [actions, setActions] = useState<DrawAction[]>([]);
   const [currentAction, setCurrentAction] = useState<DrawAction | null>(null);
+  const [isSaved, setIsSaved] = useState(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -58,6 +61,43 @@ export function ImagePainter({
       redrawActions(ctx);
     }
   }, [actions, backgroundImage, width, height]);
+
+  // Define handleSave before using it in the auto-save effect
+  const handleSave = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !onSave) return;
+
+    const pngUrl = canvas.toDataURL('image/png');
+    const jsonData = JSON.stringify({ actions, backgroundImage });
+    onSave(pngUrl, jsonData);
+  }, [actions, backgroundImage, onSave]);
+
+  // Auto-save with debounce when actions change
+  useEffect(() => {
+    if (actions.length === 0) {
+      setIsSaved(true);
+      return;
+    }
+
+    setIsSaved(false);
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce auto-save by 1 second
+    saveTimeoutRef.current = setTimeout(() => {
+      handleSave();
+      setIsSaved(true);
+    }, 1000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [actions, handleSave]);
 
   const redrawActions = (ctx: CanvasRenderingContext2D) => {
     actions.forEach(action => {
@@ -161,15 +201,6 @@ export function ImagePainter({
     setActions([]);
   };
 
-  const handleSave = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !onSave) return;
-
-    const pngUrl = canvas.toDataURL('image/png');
-    const jsonData = JSON.stringify({ actions, backgroundImage });
-    onSave(pngUrl, jsonData);
-  };
-
   const tools = [
     { id: 'select' as Tool, icon: '↖', label: 'Select' },
     { id: 'brush' as Tool, icon: '✎', label: 'Brush' },
@@ -227,17 +258,26 @@ export function ImagePainter({
         <div className="h-6 w-px bg-border" />
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Button variant="outline" size="sm" onClick={handleUndo}>
             Undo
           </Button>
           <Button variant="outline" size="sm" onClick={handleClear}>
             Clear
           </Button>
-          {onSave && (
-            <Button variant="primary" size="sm" onClick={handleSave}>
-              Save
-            </Button>
+          
+          {/* Auto-save status indicator */}
+          {actions.length > 0 && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              {isSaved ? (
+                <>
+                  <Check className="h-4 w-4 text-green-600" />
+                  <span className="text-green-600">Saved</span>
+                </>
+              ) : (
+                <span>Saving...</span>
+              )}
+            </div>
           )}
         </div>
       </div>
