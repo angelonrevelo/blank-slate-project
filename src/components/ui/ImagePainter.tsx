@@ -198,7 +198,33 @@ export function ImagePainter({
   };
 
   const handleClear = () => {
+    // Clear all recorded actions
     setActions([]);
+
+    // Cancel any pending auto-save since we're handling save manually
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Reset canvas to a blank state
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Persist the cleared state so parents (and the backend) stop seeing the old drawing
+    if (onSave) {
+      const pngUrl = canvas.toDataURL('image/png');
+      const jsonData = JSON.stringify({ actions: [], backgroundImage: null });
+      onSave(pngUrl, jsonData);
+    }
+
+    setIsSaved(true);
   };
 
   const tools = [
