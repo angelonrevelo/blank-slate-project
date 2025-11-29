@@ -202,7 +202,7 @@ export function SurgeryPage() {
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="p-6 h-full">
+          <div className="p-6 md:p-8 h-full">
             <div className="grid grid-cols-6 gap-4 h-full">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="space-y-3">
@@ -214,12 +214,14 @@ export function SurgeryPage() {
             </div>
           </div>
         ) : (
-          <KanbanBoard
-            columns={kanbanColumns}
-            items={kanbanItems}
-            onCardClick={handleCardClick}
-            onSearch={setSearchQuery}
-          />
+          <div className="h-full overflow-auto p-6 md:p-8">
+            <KanbanBoard
+              columns={kanbanColumns}
+              items={kanbanItems}
+              onCardClick={handleCardClick}
+              onSearch={setSearchQuery}
+            />
+          </div>
         )}
       </div>
 
