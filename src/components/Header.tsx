@@ -29,25 +29,27 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4 md:px-6 flex-shrink-0">
       {/* Global Search */}
-      <GlobalSearch />
+      <div className="flex-shrink-0">
+        <GlobalSearch />
+      </div>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-4">
+      {/* Notification - Centered on mobile, with user menu on tablet+ */}
+      <div className="flex items-center gap-2 md:gap-4">
         <NotificationDropdown />
 
         {/* User Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-secondary rounded-lg px-3 py-2 transition-colors">
+          <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-secondary rounded-lg px-2 md:px-3 py-2 transition-colors">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs">{getInitials()}</AvatarFallback>
             </Avatar>
-            <div className="text-left hidden md:block">
+            <div className="text-left hidden lg:block">
               <p className="text-sm font-medium text-foreground">{user?.email?.split('@')[0] || 'User'}</p>
               <p className="text-xs text-muted-foreground">Staff</p>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
