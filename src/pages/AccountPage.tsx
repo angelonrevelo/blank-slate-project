@@ -372,6 +372,14 @@ export function AccountPage() {
                   src={signature}
                   alt="User Signature"
                   className="max-h-[100px] object-contain mx-auto"
+                  onError={(e) => {
+                    console.error('Failed to load signature image:', signature);
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<p class="text-muted-foreground text-center">Failed to load signature</p>';
+                    }
+                  }}
                 />
               </div>
             ) : (
