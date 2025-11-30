@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from './Button';
-import { Check } from 'lucide-react';
 
 interface ImagePainterProps {
   width?: number;
@@ -34,7 +33,6 @@ export function ImagePainter({
   const [brushSize, setBrushSize] = useState(3);
   const [actions, setActions] = useState<DrawAction[]>([]);
   const [currentAction, setCurrentAction] = useState<DrawAction | null>(null);
-  const [isSaved, setIsSaved] = useState(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -75,11 +73,8 @@ export function ImagePainter({
   // Auto-save with debounce when actions change
   useEffect(() => {
     if (actions.length === 0) {
-      setIsSaved(true);
       return;
     }
-
-    setIsSaved(false);
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -89,7 +84,6 @@ export function ImagePainter({
     // Debounce auto-save by 1 second
     saveTimeoutRef.current = setTimeout(() => {
       handleSave();
-      setIsSaved(true);
     }, 1000);
 
     return () => {
@@ -223,8 +217,6 @@ export function ImagePainter({
       const jsonData = JSON.stringify({ actions: [], backgroundImage: null });
       onSave(pngUrl, jsonData);
     }
-
-    setIsSaved(true);
   };
 
   const tools = [
@@ -291,20 +283,6 @@ export function ImagePainter({
           <Button variant="outline" size="sm" onClick={handleClear}>
             Clear
           </Button>
-          
-          {/* Auto-save status indicator */}
-          {actions.length > 0 && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              {isSaved ? (
-                <>
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="text-green-600">Saved</span>
-                </>
-              ) : (
-                <span>Saving...</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
